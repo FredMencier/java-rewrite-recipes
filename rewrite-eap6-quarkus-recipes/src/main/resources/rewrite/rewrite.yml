@@ -1,0 +1,238 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.rxc.java.imports
+displayName: Composite recipe for OrderImports and RemoveUnusedImports
+recipeList:
+  - org.openrewrite.java.OrderImports
+  - org.openrewrite.java.RemoveUnusedImports
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.fin.migrateToQuarkus.pom
+displayName: Migrate to Quarkus Pom.xml recipes
+recipeList:
+  - org.openrewrite.maven.AddManagedDependency:
+      groupId: io.quarkus.platform
+      artifactId: quarkus-bom
+      version: latest.release
+      type: pom
+      scope: import
+      addToRootPom: true
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-arc
+      version: latest.release
+      onlyIfUsing: javax.ejb.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: jakarta.inject
+      artifactId: jakarta.inject-api
+      version: latest.release
+      onlyIfUsing: javax.ejb.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: jakarta.enterprise
+      artifactId: jakarta.enterprise.cdi-api
+      version: latest.release
+      onlyIfUsing: javax.ejb.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-narayana-jta
+      version: latest.release
+      onlyIfUsing: javax.ejb.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-resteasy-reactive
+      version: latest.release
+      onlyIfUsing: javax.servlet.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-resteasy-reactive-jackson
+      version: latest.release
+      onlyIfUsing: javax.servlet.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-smallrye-openapi
+      version: latest.release
+      onlyIfUsing: javax.servlet.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-config-yaml
+      version: latest.release
+      onlyIfUsing: javax.servlet.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: jakarta.inject
+      artifactId: jakarta.inject-api
+      version: latest.release
+      onlyIfUsing: javax.servlet.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-smallrye-openapi
+      version: latest.release
+      onlyIfUsing: javax.servlet.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-undertow
+      version: latest.release
+      onlyIfUsing: javax.servlet.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-hibernate-orm
+      version: latest.release
+      onlyIfUsing: javax.persistence.*
+  - org.openrewrite.maven.AddDependency:
+      groupId: io.quarkus
+      artifactId: quarkus-jdbc-mysql
+      version: latest.release
+      onlyIfUsing: javax.servlet.*
+  - org.exemple.maven.AddMavenQuarkusPlugin:
+      businessModuleName: MyFinancialWeb
+  - org.openrewrite.maven.AddPlugin:
+      groupId: io.quarkus.platform
+      artifactId: quarkus-maven-plugin
+      version: 3.8.2
+      filePattern: 'pom.xml'
+  - org.openrewrite.maven.RemoveDependency:
+      groupId: org.jboss.spec.javax.ejb
+      artifactId: jboss-ejb-api_3.1_spec
+  - org.openrewrite.maven.RemoveDependency:
+      groupId: org.jboss.spec.javax.servlet
+      artifactId: jboss-servlet-api_3.0_spec
+  - org.openrewrite.maven.RemoveDependency:
+      groupId: org.jboss.ejb3
+      artifactId: jboss-ejb3-ext-api
+  - org.openrewrite.maven.RemoveDependency:
+      groupId: org.hibernate.javax.persistence
+      artifactId : hibernate-jpa-2.0-api
+  - org.openrewrite.maven.RemovePlugin:
+      groupId: org.apache.maven.plugins
+      artifactId: maven-war-plugin
+  - org.openrewrite.maven.RemovePlugin:
+      groupId: org.apache.maven.plugins
+      artifactId: maven-ejb-plugin
+  - org.openrewrite.maven.UpgradeDependencyVersion:
+      groupId: org.projectlombok
+      artifactId: lombok
+      newVersion: 1.18.28
+  - org.openrewrite.maven.ChangePluginConfiguration:
+      groupId: org.apache.maven.plugins
+      artifactId: maven-compiler-plugin
+      configuration:  <annotationProcessorPaths><path><groupId>org.projectlombok</groupId><artifactId>lombok</artifactId><version>1.18.28</version></path></annotationProcessorPaths>
+  - org.openrewrite.maven.UpgradePluginVersion:
+      groupId: io.smallrye
+      artifactId: jandex-maven-plugin
+      newVersion: latest.release
+  - org.openrewrite.maven.ChangePropertyValue:
+      key: maven.compiler.target
+      newValue: 17
+  - org.openrewrite.maven.ChangePropertyValue:
+      key: maven.compiler.source
+      newValue: 17
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.fin.migrateToQuarkus.EJB
+displayName: Migrate java EJB to Quarkus recepies
+recipeList:
+  - org.exemple.java.ejb.RefactorSessionBean
+  - org.exemple.RefactorLocalInterfaces
+  - org.openrewrite.java.RemoveAnnotation:
+      annotationPattern: '@javax.ejb.Local'
+  - org.openrewrite.java.RemoveAnnotation:
+      annotationPattern: '@javax.ejb.Remote'
+  - org.openrewrite.java.RemoveUnusedImports
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.fin.migrateToQuarkus.jackson
+displayName: Migrate to Quarkus java jackson recepies
+recipeList:
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.codehaus.jackson.annotate
+      newPackageName: com.fasterxml.jackson.annotation
+      recursive: null
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.codehaus.jackson.map.annotate
+      newPackageName: com.fasterxml.jackson.databind.annotation
+      recursive: null
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.codehaus.jackson.map
+      newPackageName: com.fasterxml.jackson.databind
+      recursive: null
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.fin.migrateToQuarkus.javaxToJakarta
+displayName: Migrate to Quarkus java to jakarta recipies
+recipeList:
+  - org.openrewrite.java.migrate.jakarta.JavaxInjectMigrationToJakartaInject
+  - org.openrewrite.java.migrate.jakarta.JavaxEnterpriseToJakartaEnterprise
+  - org.openrewrite.java.migrate.jakarta.JavaxTransactionMigrationToJakartaTransaction
+  - org.openrewrite.java.migrate.jakarta.JavaxServletToJakartaServlet
+  - org.openrewrite.java.migrate.jakarta.JavaxWsToJakartaWs
+  - org.openrewrite.java.migrate.jakarta.JavaxPersistenceToJakartaPersistence
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.fin.migrateToQuarkus.properties
+displayName: Migrate to Quarkus properties file to yaml file
+recipeList:
+  - org.exemple.java.properties.RefactorProperties
+  - org.exemple.yaml.ConvertPropsToYaml
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.fin.migrateToQuarkus.pom.clean
+displayName: Migrate to Quarkus Pom.xml recepies
+recipeList:
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: io.quarkus
+      artifactId: quarkus-arc
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: io.quarkus
+      artifactId: quarkus-resteasy-reactive
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: io.quarkus
+      artifactId: quarkus-smallrye-openapi
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: jakarta.enterprise
+      artifactId: jakarta.enterprise.cdi-api
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: jakarta.inject
+      artifactId: jakarta.inject-api
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: io.quarkus
+      artifactId: quarkus-narayana-jta
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: jakarta.servlet
+      artifactId: jakarta.servlet-api
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: io.quarkus
+      artifactId: quarkus-smallrye-openapi
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: io.quarkus
+      artifactId: quarkus-config-yaml
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: io.quarkus
+      artifactId: quarkus-undertow
+  - org.exemple.maven.RemoveVersionArtifactId:
+      groupId: io.quarkus
+      artifactId: quarkus-resteasy-reactive-jackson
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.fin.migrateToQuarkus.java.clean
+displayName: Migrate to Quarkus java recepies
+recipeList:
+  - org.openrewrite.text.FindAndReplace:
+      find: /MyFinancialWeb/rest/
+      replace: /
+      filePattern: '**/*.java'
+  - org.openrewrite.DeleteSourceFiles:
+      filePattern: '**/RestApplication.java'
+  - org.openrewrite.DeleteSourceFiles:
+      filePattern: '**/application.properties'
+  - org.openrewrite.DeleteSourceFiles:
+      filePattern: '**/persistence.xml'
+  - org.openrewrite.text.FindAndReplace:
+      find: 'Powered by JBoss EAP6'
+      replace: 'Propulsed by Quarkus'
+      filePattern: '**/application*.yaml'

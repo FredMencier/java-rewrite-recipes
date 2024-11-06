@@ -1,0 +1,30 @@
+quarkus:
+  application:
+    name: FinancialApp
+  swagger-ui:
+    always-include: true
+  http:
+    port: 8081
+  log:
+    level: INFO
+    min-level: DEBUG
+
+  datasource:
+    FinancialPU:
+      db-kind: mysql
+      jdbc:
+        url: jdbc:mysql://localhost:3306/mydatabase
+      username: root
+      password: mysqladmin
+
+  hibernate-orm:
+    log:
+      sql: true
+    validate-in-dev-mode: false
+    database:
+      generation: none
+    FinancialPU:
+      datasource: FinancialPU
+      packages: org.fin.entity
+      mapping-files:
+        - mappings.xml
