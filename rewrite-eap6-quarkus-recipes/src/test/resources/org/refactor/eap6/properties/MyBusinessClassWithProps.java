@@ -1,4 +1,4 @@
-package org.exemple.properties;
+package org.refactor.eap6.properties;
 
 public class MyBusinessClassWithProps {
 

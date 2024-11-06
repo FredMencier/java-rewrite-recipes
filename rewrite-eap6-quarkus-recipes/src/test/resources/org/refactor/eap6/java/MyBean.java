@@ -1,4 +1,4 @@
-package org.exemple.java;
+package org.refactor.eap6.java;
 
 public class MyBean {
 

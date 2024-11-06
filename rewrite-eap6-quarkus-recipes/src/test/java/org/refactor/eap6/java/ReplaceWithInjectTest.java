@@ -1,6 +1,6 @@
 package org.refactor.eap6.java;
 
-import org.exemple.util.FileUtil;
+import org.refactor.eap6.util.FileUtil;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -20,7 +20,7 @@ class ReplaceWithInjectTest implements RewriteTest {
 
     {
         try {
-            sourceSpecs = java(fileUtil.readResourceFileContent("org/exemple/java/MyBean.java"));
+            sourceSpecs = java(fileUtil.readResourceFileContent("org/refactor.eap6/java/MyBean.java"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -36,7 +36,7 @@ class ReplaceWithInjectTest implements RewriteTest {
         rewriteRun(
                 spec -> spec.parser(JavaParser.fromJavaVersion().classpath("slf4j-api")).typeValidationOptions(TypeValidation.none()),
                 sourceSpecs,
-                java(fileUtil.readResourceFileContent("org/exemple/java/MyNewInstanceToInject.java"))
+                java(fileUtil.readResourceFileContent("org/refactor.eap6/java/MyNewInstanceToInject.java"))
         );
     }
 }

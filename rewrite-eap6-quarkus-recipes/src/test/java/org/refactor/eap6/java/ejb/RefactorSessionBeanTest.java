@@ -1,6 +1,6 @@
 package org.refactor.eap6.java.ejb;
 
-import org.exemple.util.FileUtil;
+import org.refactor.eap6.util.FileUtil;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -24,7 +24,7 @@ class RefactorSessionBeanTest implements RewriteTest {
 
     {
         try {
-            localInterface = java(fileUtil.readResourceFileContent("org/exemple/java/localinterface/MyLocalInterface.java"));
+            localInterface = java(fileUtil.readResourceFileContent("org/refactor.eap6/java/localinterface/MyLocalInterface.java"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -36,7 +36,7 @@ class RefactorSessionBeanTest implements RewriteTest {
                 spec -> spec.parser(JavaParser.fromJavaVersion()
                         .classpath("jakarta.inject-api", "slf4j-api", "jboss-ejb-api_3.1_spec")),
                 localInterface,
-                java(fileUtil.readResourceFileContent("org/exemple/java/localinterface/MyBusinessEjb.java"))
+                java(fileUtil.readResourceFileContent("org/refactor.eap6/java/localinterface/MyBusinessEjb.java"))
         );
     }
 

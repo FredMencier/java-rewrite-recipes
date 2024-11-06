@@ -1,6 +1,6 @@
 package org.refactor.eap6.rest;
 
-import org.exemple.util.FileUtil;
+import org.refactor.eap6.util.FileUtil;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -20,7 +20,7 @@ class BlockingToReactiveRestTest implements RewriteTest {
 
     {
         try {
-            currency = java(fileUtil.readResourceFileContent("org/exemple/java/rest/Currency.java"));
+            currency = java(fileUtil.readResourceFileContent("org/refactor.eap6/java/rest/Currency.java"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -38,7 +38,7 @@ class BlockingToReactiveRestTest implements RewriteTest {
                         .classpath("jakarta.inject-api", "quarkus-resteasy-reactive", "jakarta.ws.rs-api"))
                         .typeValidationOptions(TypeValidation.none()),
                 currency,
-                java(fileUtil.readResourceFileContent("org/exemple/java/rest/FinancialAPI.java"))
+                java(fileUtil.readResourceFileContent("org/refactor.eap6/java/rest/FinancialAPI.java"))
         );
     }
 

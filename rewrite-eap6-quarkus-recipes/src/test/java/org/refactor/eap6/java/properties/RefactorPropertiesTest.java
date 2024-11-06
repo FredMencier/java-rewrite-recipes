@@ -1,6 +1,6 @@
 package org.refactor.eap6.java.properties;
 
-import org.exemple.util.FileUtil;
+import org.refactor.eap6.util.FileUtil;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -22,8 +22,8 @@ class RefactorPropertiesTest  implements RewriteTest {
     void refactorPropertiesConfigPropertyTest() throws IOException {
         rewriteRun(
                 spec -> spec.parser(JavaParser.fromJavaVersion().classpath("slf4j-api")).typeValidationOptions(TypeValidation.none()),
-                java(fileUtil.readResourceFileContent("org/exemple/properties/MyBusinessClassWithProps.java"),
-                        fileUtil.readResourceFileContent("org/exemple/properties/MyBusinessClassWithPropsTranformed.java"))
+                java(fileUtil.readResourceFileContent("org/refactor.eap6/properties/MyBusinessClassWithProps.java"),
+                        fileUtil.readResourceFileContent("org/refactor.eap6/properties/MyBusinessClassWithPropsTranformed.java"))
         );
     }
 }

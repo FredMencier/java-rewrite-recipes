@@ -1,7 +1,7 @@
 package org.refactor.eap6.java.localinterface;
 
-import org.exemple.RefactorLocalInterfaces;
-import org.exemple.util.FileUtil;
+import org.refactor.eap6.RefactorLocalInterfaces;
+import org.refactor.eap6.util.FileUtil;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -26,9 +26,9 @@ class RefactorLocalInterfacesTest implements RewriteTest {
 
     {
         try {
-            localInterface = java(fileUtil.readResourceFileContent("org/exemple/java/localinterface/MyLocalInterface.java"));
-            implementationLocalInterface = java(fileUtil.readResourceFileContent("org/exemple/java/localinterface/MyBusinessEjb.java"),
-                    fileUtil.readResourceFileContent("org/exemple/java/localinterface/MyBusinessEjbTransformed.java"));
+            localInterface = java(fileUtil.readResourceFileContent("org/refactor.eap6/java/localinterface/MyLocalInterface.java"));
+            implementationLocalInterface = java(fileUtil.readResourceFileContent("org/refactor.eap6/java/localinterface/MyBusinessEjb.java"),
+                    fileUtil.readResourceFileContent("org/refactor.eap6/java/localinterface/MyBusinessEjbTransformed.java"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -40,8 +40,8 @@ class RefactorLocalInterfacesTest implements RewriteTest {
                 spec -> spec.parser(JavaParser.fromJavaVersion()
                         .classpath("jakarta.inject-api", "slf4j-api", "jboss-ejb-api_3.1_spec")),
                 localInterface,
-                java(fileUtil.readResourceFileContent("org/exemple/java/localinterface/MyBusinessEjb.java"),
-                        fileUtil.readResourceFileContent("org/exemple/java/localinterface/MyBusinessEjbTransformed.java"))
+                java(fileUtil.readResourceFileContent("org/refactor.eap6/java/localinterface/MyBusinessEjb.java"),
+                        fileUtil.readResourceFileContent("org/refactor.eap6/java/localinterface/MyBusinessEjbTransformed.java"))
         );
     }
 
@@ -51,8 +51,8 @@ class RefactorLocalInterfacesTest implements RewriteTest {
                 spec -> spec.parser(JavaParser.fromJavaVersion()
                         .classpath("jakarta.inject-api", "slf4j-api", "jboss-ejb-api_3.1_spec")),
                 localInterface, implementationLocalInterface,
-                java(fileUtil.readResourceFileContent("org/exemple/java/localinterface/MyManagerInjected.java"),
-                        fileUtil.readResourceFileContent("org/exemple/java/localinterface/MyManagerInjectedTransformed.java"))
+                java(fileUtil.readResourceFileContent("org/refactor.eap6/java/localinterface/MyManagerInjected.java"),
+                        fileUtil.readResourceFileContent("org/refactor.eap6/java/localinterface/MyManagerInjectedTransformed.java"))
         );
     }
 }
