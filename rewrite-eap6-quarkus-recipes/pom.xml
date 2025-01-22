@@ -17,6 +17,8 @@
         <maven.compiler.target>11</maven.compiler.target>
         <maven.compiler.testSource>21</maven.compiler.testSource>
         <maven.compiler.testTarget>21</maven.compiler.testTarget>
+
+        <surfire.plugin.version>3.5.2</surfire.plugin.version>
     </properties>
 
     <dependencies>
@@ -29,13 +31,13 @@
         <dependency>
             <groupId>org.jboss.spec.javax.ejb</groupId>
             <artifactId>jboss-ejb-api_3.1_spec</artifactId>
-            <version>1.0.2.Final-redhat-3</version>
+            <version>1.0.2.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.interceptor</groupId>
             <artifactId>jboss-interceptors-api_1.1_spec</artifactId>
-            <version>1.0.1.Final-redhat-3</version>
+            <version>1.0.1.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -56,7 +58,7 @@
         <dependency>
             <groupId>org.jboss.weld.se</groupId>
             <artifactId>weld-se</artifactId>
-            <version>2.1.2.Final-lodh1</version>
+            <version>2.4.8.Final</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -66,6 +68,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surfire.plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -76,7 +79,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.30</version>
+                            <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

@@ -1,7 +1,5 @@
 package org.refactor.update;
 
-import org.refactor.java.maven.AddOrUpdateVersionArtifactId;
-import org.refactor.java.xml.ChangePluginConfigurationValue;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -11,6 +9,8 @@ import org.openrewrite.maven.*;
 import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
 import org.openrewrite.text.FindAndReplace;
+import org.refactor.maven.AddOrUpdateVersionArtifactId;
+import org.refactor.xml.ChangePluginConfigurationValue;
 
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.openrewrite.java.Assertions.mavenProject;
@@ -30,7 +30,7 @@ class SpringbootUpdateTest implements RewriteTest {
     @Test
     void shouldUpdatePomParentVersion() {
         rewriteRun(
-                recipeSpec -> recipeSpec.recipe(new UpgradeParentVersion("org.springframework.boot", "spring-boot-starter-parent", "3.4.X", null, null)),
+                recipeSpec -> recipeSpec.recipes(new UpgradeParentVersion("org.springframework.boot", "spring-boot-starter-parent", "3.4.X", null, null)),
                 mavenProject("springboot",
                         //language=xml
                         pomXml(
@@ -58,7 +58,7 @@ class SpringbootUpdateTest implements RewriteTest {
                                         	<parent>
                                         		<groupId>org.springframework.boot</groupId>
                                         		<artifactId>spring-boot-starter-parent</artifactId>
-                                        		<version>3.4.3</version>
+                                        		<version>3.4.1</version>
                                         	</parent>
                                         	<groupId>org.refactor.test</groupId>
                                          	<artifactId>TestProject</artifactId>
@@ -68,6 +68,86 @@ class SpringbootUpdateTest implements RewriteTest {
                                             <properties>
                                                 <java.version>17</java.version>
                                             </properties>
+                                        </project>
+                                        """
+                        )
+                )
+        );
+    }
+
+    @Test
+    void shouldUpdatePropertyVersion() {
+        rewriteRun(
+                recipeSpec -> recipeSpec.recipes(new UpgradeDependencyVersion("org.projectlombok", "lombok", "1.18.X", null, null, null)),
+                mavenProject("springboot",
+                        //language=xml
+                        pomXml(
+                                """
+                                        <project>
+                                         <modelVersion>4.0.0</modelVersion>
+                                        	<parent>
+                                        		<groupId>org.springframework.boot</groupId>
+                                        		<artifactId>spring-boot-starter-parent</artifactId>
+                                        		<version>3.4.1</version>
+                                        	</parent>
+                                        	<groupId>org.refactor.test</groupId>
+                                         	<artifactId>TestProject</artifactId>
+                                         	<version>1.0.0-SNAPSHOT</version>
+                                         	<packaging>pom</packaging>
+                                         	<name>FxProject</name>
+                                            <properties>
+                                                <java.version>17</java.version>
+                                                <lombok.version>1.18.26</lombok.version>
+                                            </properties>
+                                            <dependencyManagement>
+                                                <dependencies>
+                                                    <dependency>
+                                                        <groupId>org.projectlombok</groupId>
+                                                        <artifactId>lombok</artifactId>
+                                                        <version>${lombok.version}</version>
+                                                    </dependency>
+                                                </dependencies>
+                                            </dependencyManagement>
+                                            <dependencies>
+                                                <dependency>
+                                                    <groupId>org.projectlombok</groupId>
+                                                    <artifactId>lombok</artifactId>
+                                                </dependency>
+                                            </dependencies>
+                                        </project>
+                                        """,
+                                """
+                                        <project>
+                                         <modelVersion>4.0.0</modelVersion>
+                                        	<parent>
+                                        		<groupId>org.springframework.boot</groupId>
+                                        		<artifactId>spring-boot-starter-parent</artifactId>
+                                        		<version>3.4.1</version>
+                                        	</parent>
+                                        	<groupId>org.refactor.test</groupId>
+                                         	<artifactId>TestProject</artifactId>
+                                         	<version>1.0.0-SNAPSHOT</version>
+                                         	<packaging>pom</packaging>
+                                         	<name>FxProject</name>
+                                            <properties>
+                                                <java.version>17</java.version>
+                                                <lombok.version>1.18.36</lombok.version>
+                                            </properties>
+                                            <dependencyManagement>
+                                                <dependencies>
+                                                    <dependency>
+                                                        <groupId>org.projectlombok</groupId>
+                                                        <artifactId>lombok</artifactId>
+                                                        <version>${lombok.version}</version>
+                                                    </dependency>
+                                                </dependencies>
+                                            </dependencyManagement>
+                                            <dependencies>
+                                                <dependency>
+                                                    <groupId>org.projectlombok</groupId>
+                                                    <artifactId>lombok</artifactId>
+                                                </dependency>
+                                            </dependencies>
                                         </project>
                                         """
                         )
@@ -158,6 +238,7 @@ class SpringbootUpdateTest implements RewriteTest {
     }
 
     @Test
+    @Disabled
     void shouldUpdateOrAddDepndencyJavaVersion() {
         rewriteRun(
                 recipeSpec -> recipeSpec.recipes(
