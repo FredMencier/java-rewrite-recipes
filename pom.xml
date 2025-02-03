@@ -17,6 +17,7 @@
     <modules>
         <module>rewrite-eap6-quarkus-recipes</module>
         <module>rewrite-springboot-recipes</module>
+        <module>rewrite-recipes</module>
     </modules>
 
     <properties>
