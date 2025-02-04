@@ -62,4 +62,72 @@ class ManageDependenciesVersionTest implements RewriteTest {
                 )
         );
     }
+
+        @Test
+    void shouldAddVersionPropertiesForDependenciesTest() {
+        rewriteRun(
+                spec -> spec.recipe(new ManageDependenciesVersion()),
+
+                mavenProject("OpenAPIGenerator",
+
+                        //language=xml
+                        pomXml(
+                                """
+
+                                        <?xml version="1.0" encoding="UTF-8"?>
+                                        <project>
+                                            <modelVersion>4.0.0</modelVersion>
+                                                                                
+                                            <groupId>com.mycompany.app</groupId>
+                                            <artifactId>my-app</artifactId>
+                                            <packaging>pom</packaging>
+                                            <version>1</version>
+                                            <modules>
+                                                <module>GeneratorClientEAP6</module>
+                                            </modules>
+                                                                                
+                                            <properties>
+                                                <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
+                                            </properties>
+                                            <build>
+                                                <plugins>
+                                                    <plugin>
+                                                        <groupId>org.apache.maven.plugins</groupId>
+                                                        <artifactId>maven-deploy-plugin</artifactId>
+                                                        <version>${maven-deploy-plugin.version}</version>
+                                                    </plugin>
+                                                </plugins>
+                                            </build>
+                                        </project>
+                                        """
+                        ),
+                        mavenProject("GeneratorClientEAP6",
+                                //language=xml
+                                pomXml(
+                                        """
+                                                 <?xml version="1.0" encoding="UTF-8"?>
+                                                 <project>
+                                                     <parent>
+                                                         <artifactId>my-app</artifactId>
+                                                         <groupId>com.mycompany.app</groupId>
+                                                         <version>1</version>
+                                                     </parent>
+                                                     <modelVersion>4.0.0</modelVersion>
+                                                        
+                                                     <artifactId>GeneratorEAP6</artifactId>
+                                                     <version>1.0</version>
+                                                        
+                                                     <properties>
+                                                         <templates.dir>${project.parent.basedir}/templates/Java</templates.dir>
+                                                     </properties>
+                                                        
+                                                     <build/>
+                                                        
+                                                 </project>
+                                                """
+                                )
+                        )
+                )
+        );
+    }
 }
