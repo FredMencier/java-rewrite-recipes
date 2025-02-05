@@ -121,6 +121,7 @@ class ManageDependenciesVersionTest implements RewriteTest {
                                                         
                                                      <properties>
                                                          <templates.dir>${project.parent.basedir}/templates/Java</templates.dir>
+                                                         <junit-jupiter.version>5.9.2</junit-jupiter.version>
                                                      </properties>
                                                         
                                                     <dependencies>
@@ -128,6 +129,12 @@ class ManageDependenciesVersionTest implements RewriteTest {
                                                             <groupId>javax.annotation</groupId>
                                                             <artifactId>javax.annotation-api</artifactId>
                                                             <version>1.3.2</version>
+                                                        </dependency>
+                                                        <dependency>
+                                                            <groupId>org.junit.jupiter</groupId>
+                                                            <artifactId>junit-jupiter-engine</artifactId>
+                                                            <version>${junit-jupiter.version}</version>
+                                                            <scope>test</scope>
                                                         </dependency>
                                                     </dependencies>
                                                         
@@ -151,6 +158,7 @@ class ManageDependenciesVersionTest implements RewriteTest {
                                                      <properties>
                                                          <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
                                                          <templates.dir>${project.parent.basedir}/templates/Java</templates.dir>
+                                                         <junit-jupiter.version>5.9.2</junit-jupiter.version>
                                                      </properties>
                                                         
                                                     <dependencies>
@@ -158,6 +166,12 @@ class ManageDependenciesVersionTest implements RewriteTest {
                                                             <groupId>javax.annotation</groupId>
                                                             <artifactId>javax.annotation-api</artifactId>
                                                             <version>${javax.annotation-api.version}</version>
+                                                        </dependency>
+                                                        <dependency>
+                                                            <groupId>org.junit.jupiter</groupId>
+                                                            <artifactId>junit-jupiter-engine</artifactId>
+                                                            <version>${junit-jupiter.version}</version>
+                                                            <scope>test</scope>
                                                         </dependency>
                                                     </dependencies>
                                                         
