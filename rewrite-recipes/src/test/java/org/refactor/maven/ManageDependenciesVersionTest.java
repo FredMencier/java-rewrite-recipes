@@ -9,6 +9,7 @@ import org.openrewrite.test.RewriteTest;
 import org.openrewrite.test.SourceSpec;
 
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
+import static org.openrewrite.java.Assertions.mavenProject;
 import static org.openrewrite.maven.Assertions.pomXml;
 
 class ManageDependenciesVersionTest implements RewriteTest {
@@ -63,7 +64,7 @@ class ManageDependenciesVersionTest implements RewriteTest {
         );
     }
 
-        @Test
+    @Test
     void shouldAddVersionPropertiesForDependenciesTest() {
         rewriteRun(
                 spec -> spec.recipe(new ManageDependenciesVersion()),
@@ -89,6 +90,7 @@ class ManageDependenciesVersionTest implements RewriteTest {
                                             <properties>
                                                 <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
                                             </properties>
+                                           
                                             <build>
                                                 <plugins>
                                                     <plugin>
@@ -120,6 +122,44 @@ class ManageDependenciesVersionTest implements RewriteTest {
                                                      <properties>
                                                          <templates.dir>${project.parent.basedir}/templates/Java</templates.dir>
                                                      </properties>
+                                                        
+                                                    <dependencies>
+                                                        <dependency>
+                                                            <groupId>javax.annotation</groupId>
+                                                            <artifactId>javax.annotation-api</artifactId>
+                                                            <version>1.3.2</version>
+                                                        </dependency>
+                                                    </dependencies>
+                                                        
+                                                     <build/>
+                                                        
+                                                 </project>
+                                                """,
+                                        """
+                                                 <?xml version="1.0" encoding="UTF-8"?>
+                                                 <project>
+                                                     <parent>
+                                                         <artifactId>my-app</artifactId>
+                                                         <groupId>com.mycompany.app</groupId>
+                                                         <version>1</version>
+                                                     </parent>
+                                                     <modelVersion>4.0.0</modelVersion>
+                                                        
+                                                     <artifactId>GeneratorEAP6</artifactId>
+                                                     <version>1.0</version>
+                                                        
+                                                     <properties>
+                                                         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+                                                         <templates.dir>${project.parent.basedir}/templates/Java</templates.dir>
+                                                     </properties>
+                                                        
+                                                    <dependencies>
+                                                        <dependency>
+                                                            <groupId>javax.annotation</groupId>
+                                                            <artifactId>javax.annotation-api</artifactId>
+                                                            <version>${javax.annotation-api.version}</version>
+                                                        </dependency>
+                                                    </dependencies>
                                                         
                                                      <build/>
                                                         
