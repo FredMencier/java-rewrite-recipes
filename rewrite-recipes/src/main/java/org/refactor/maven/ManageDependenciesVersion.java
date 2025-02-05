@@ -56,11 +56,13 @@ public class ManageDependenciesVersion extends ScanningRecipe<Map<GroupArtifactV
                 Map<Scope, List<ResolvedDependency>> dependencies = getResolutionResult().getDependencies();
                 if (scope != null && !scope.isEmpty()) {
                     Scope scopeEnum = Scope.fromName(scope);
-                    dependencies = Map.of(scopeEnum, dependencies.get(scopeEnum));
+                    Map<Scope, List<ResolvedDependency>> scopeMap = new HashMap<>();
+                    scopeMap.put(scopeEnum, dependencies.get(scopeEnum));
+                    dependencies = scopeMap;
                 }
                 List<ResolvedDependency> dependencyList = dependencies.values().stream().flatMap(List::stream).filter(resolvedDependency -> resolvedDependency.getDepth() == 0).collect(Collectors.toList());
-                ResolvedGroupArtifactVersion root = findRootPom(getResolutionResult()).getPom().getGav();
-                rootGavToDependencies.computeIfAbsent(new GroupArtifactVersion(root.getGroupId(), root.getArtifactId(), root.getVersion()), v -> new ArrayList<>()).addAll(dependencyList);
+                ResolvedPom pom = getResolutionResult().getPom();
+                rootGavToDependencies.computeIfAbsent(new GroupArtifactVersion(pom.getGroupId(), pom.getArtifactId(), pom.getVersion()), v -> new ArrayList<>()).addAll(dependencyList);
                 return doc;
             }
         };
@@ -73,21 +75,20 @@ public class ManageDependenciesVersion extends ScanningRecipe<Map<GroupArtifactV
             public Xml visitDocument(Xml.Document document, ExecutionContext ctx) {
                 Xml maven = super.visitDocument(document, ctx);
 
-                rootGavToDependencies.values().forEach(scopeDependenciesList -> scopeDependenciesList.forEach(resolvedDependency -> {
-                    String propertyVersion = String.format("%s.version", resolvedDependency.getArtifactId());
-                    doAfterVisit(new ChangeVersionTagVisitor(resolvedDependency.getGroupId(), resolvedDependency.getArtifactId(), String.format("${%s}", propertyVersion)));
-                    doAfterVisit(new AddPropertyVisitor(String.format("%s", propertyVersion), resolvedDependency.getVersion(), false));
-                }));
+                rootGavToDependencies.entrySet().forEach(entry -> {
+                    GroupArtifactVersion gav = entry.getKey();
+                    List<ResolvedDependency> dependencies = entry.getValue();
+                    if (!dependencies.isEmpty() && getResolutionResult().getPom().getArtifactId().equals(gav.getArtifactId())) {
+                        dependencies.forEach(resolvedDependency -> {
+                            String propertyVersion = String.format("%s.version", resolvedDependency.getArtifactId());
+                            doAfterVisit(new ChangeVersionTagVisitor(resolvedDependency.getGroupId(), resolvedDependency.getArtifactId(), String.format("${%s}", propertyVersion)));
+                            doAfterVisit(new AddPropertyVisitor(String.format("%s", propertyVersion), resolvedDependency.getVersion(), false));
+                        });
+                    }
+                });
                 return maven;
             }
         };
-    }
-
-    private MavenResolutionResult findRootPom(MavenResolutionResult pom) {
-        if (pom.getParent() == null) {
-            return pom;
-        }
-        return findRootPom(pom.getParent());
     }
 
     private static class ChangeVersionTagVisitor extends MavenIsoVisitor<ExecutionContext> {
