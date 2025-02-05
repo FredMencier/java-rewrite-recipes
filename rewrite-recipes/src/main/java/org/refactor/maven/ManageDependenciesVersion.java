@@ -60,7 +60,7 @@ public class ManageDependenciesVersion extends ScanningRecipe<Map<GroupArtifactV
                     scopeMap.put(scopeEnum, dependencies.get(scopeEnum));
                     dependencies = scopeMap;
                 }
-                List<ResolvedDependency> dependencyList = dependencies.values().stream().flatMap(List::stream).filter(resolvedDependency -> resolvedDependency.getDepth() == 0).collect(Collectors.toList());
+                List<ResolvedDependency> dependencyList = dependencies.values().stream().flatMap(List::stream).filter(resolvedDependency -> resolvedDependency.isDirect() && resolvedDependency.getRequested().getVersion() != null && !resolvedDependency.getRequested().getVersion().startsWith("$")).collect(Collectors.toList());
                 ResolvedPom pom = getResolutionResult().getPom();
                 rootGavToDependencies.computeIfAbsent(new GroupArtifactVersion(pom.getGroupId(), pom.getArtifactId(), pom.getVersion()), v -> new ArrayList<>()).addAll(dependencyList);
                 return doc;
