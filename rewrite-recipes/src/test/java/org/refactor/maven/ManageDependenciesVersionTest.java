@@ -62,4 +62,45 @@ class ManageDependenciesVersionTest implements RewriteTest {
                 )
         );
     }
+
+    @Test
+    void shouldAddVersionPropertiesForDependenciesWithoutScopeTest() {
+        rewriteRun(
+                spec -> spec.recipe(new ManageDependenciesVersion()),
+                //language=xml
+                pomXml(
+                        """
+                                <project>
+                                    <groupId>com.mycompany.app</groupId>
+                                    <artifactId>my-app</artifactId>
+                                    <version>1</version>
+                                    <dependencies>
+                                        <dependency>
+                                            <groupId>org.junit.jupiter</groupId>
+                                            <artifactId>junit-jupiter-api</artifactId>
+                                            <version>5.6.2</version>
+                                        </dependency>
+                                    </dependencies>
+                                </project>
+                                """,
+                        """
+                                <project>
+                                    <groupId>com.mycompany.app</groupId>
+                                    <artifactId>my-app</artifactId>
+                                    <version>1</version>
+                                    <properties>
+                                        <junit-jupiter-api.version>5.6.2</junit-jupiter-api.version>
+                                    </properties>
+                                    <dependencies>
+                                        <dependency>
+                                            <groupId>org.junit.jupiter</groupId>
+                                            <artifactId>junit-jupiter-api</artifactId>
+                                            <version>${junit-jupiter-api.version}</version>
+                                        </dependency>
+                                    </dependencies>
+                                </project>
+                                """
+                )
+        );
+    }
 }
