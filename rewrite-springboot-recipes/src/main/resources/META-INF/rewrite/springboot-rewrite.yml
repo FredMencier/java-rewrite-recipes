@@ -1,0 +1,46 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.refactor.migrateSpringboot.4xTo5x
+displayName: Migrate Springboot project from springboot x to 3.4.x recipes with java 21
+description: >-
+  Cette recette réalise la migration de votre application SpringBoot d'une version 4.x vers une version 5.x.
+tags:
+  - Springboot
+recipeList:
+  - org.openrewrite.maven.UpgradeParentVersion:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-starter-parent
+      newVersion: 3.4.X
+  - org.openrewrite.maven.ChangePropertyValue:
+      key: java.version
+      newValue: 21
+  - org.openrewrite.maven.ChangePropertyValue:
+      key: maven.compiler.source
+      newValue: 21
+  - org.openrewrite.maven.ChangePropertyValue:
+      key: maven.compiler.target
+      newValue: 21
+  - com.lodh.arte.java.xml.ChangePluginConfigurationValue:
+      groupId: org.apache.maven.plugins
+      artifactId: maven-compiler-plugin
+      tagToUpdate: source
+      newValue: 21
+  - com.lodh.arte.java.xml.ChangePluginConfigurationValue:
+      groupId: org.apache.maven.plugins
+      artifactId: maven-compiler-plugin
+      tagToUpdate: target
+      newValue: 21
+  - org.openrewrite.text.FindAndReplace:
+      find: jdkVersion = '[0-9]*'
+      replace: jdkVersion = '21'
+      regex: true
+      filePattern: '**/Jenkinsfile'
+  - org.openrewrite.text.FindAndReplace:
+      find: '[0-9]*-latest'
+      replace: 21-latest
+      regex: true
+      filePattern: '**/Dockerfile'
+  - com.lodh.arte.java.maven.AddOrUpdateVersionArtifactId:
+      groupId: com.squareup.okhttp3
+      artifactId: mockwebserver
+      version: 4.12.0
