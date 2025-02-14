@@ -1,0 +1,9 @@
+2024-11-07 15:09:20 WARN  ReloadableJava17Parser:127 - Test.java:1: error: package javax.persistence does not exist
+2024-11-07 15:09:20 WARN  ReloadableJava17Parser:127 - import javax.persistence.EntityManager;
+2024-11-07 15:09:20 WARN  ReloadableJava17Parser:127 -                         ^
+2024-11-07 15:15:05 WARN  ReloadableJava17Parser:127 - Test2.java:1: error: package javax.ejb does not exist
+2024-11-07 15:15:05 WARN  ReloadableJava17Parser:127 - import javax.ejb.EJB;
+2024-11-07 15:15:05 WARN  ReloadableJava17Parser:127 -                 ^
+2024-11-07 15:18:35 WARN  ReloadableJava17Parser:127 - Test2.java:1: error: package javax.ejb does not exist
+2024-11-07 15:18:35 WARN  ReloadableJava17Parser:127 - import javax.ejb.EJB;
+2024-11-07 15:18:35 WARN  ReloadableJava17Parser:127 -                 ^
