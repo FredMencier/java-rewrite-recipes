@@ -92,7 +92,7 @@ public class RefactorSessionBean extends ScanningRecipe<RefactorSessionBean.Scan
 
         public static final String fullyQualifiedTransactional = "javax.transaction.Transactional";
 
-        private static final String fullyQualifiedImportEjbHttpEndpoint = "com.lodh.util.httprpc.EjbHttpEndpoint";
+        private static final String fullyQualifiedImportEjbHttpEndpoint = "org.refactor.util.httprpc.EjbHttpEndpoint";
 
 
         private List<String> annotations = Arrays.asList("ApplicationScoped", "EjbHttpEndpoint", "RequestScoped", "TransactionConfiguration", "Transactional", "Inject");
@@ -102,7 +102,7 @@ public class RefactorSessionBean extends ScanningRecipe<RefactorSessionBean.Scan
                 .imports(fullyQualifiedImportApplicationScoped, fullyQualifiedClustered).build();
 
         private final JavaTemplate ejbHttpEndpointAnnotationTemplateForRemote = JavaTemplate.builder("@EjbHttpEndpoint")
-                .javaParser(JavaParser.fromJavaVersion().dependsOn("package com.lodh.util.httprpc; public @interface EjbHttpEndpoint {}"))
+                .javaParser(JavaParser.fromJavaVersion().dependsOn("package org.refactor.eap6.util.httprpc; public @interface EjbHttpEndpoint {}"))
                 .imports(fullyQualifiedImportEjbHttpEndpoint).build();
 
         private final JavaTemplate requestScopedAnnotationTemplate = JavaTemplate.builder("@RequestScoped")

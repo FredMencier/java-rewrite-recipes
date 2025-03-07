@@ -32,8 +32,11 @@ import org.openrewrite.TreeVisitor;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.*;
+import org.refactor.eap6.java.annotation.ToRest;
+import org.refactor.eap6.yaml.util.SchemaConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.refactor.eap6.util.RewriteUtils;
 
 import javax.ws.rs.HttpMethod;
 import java.math.BigDecimal;

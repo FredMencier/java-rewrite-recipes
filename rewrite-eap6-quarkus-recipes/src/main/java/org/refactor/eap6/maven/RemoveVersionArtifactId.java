@@ -42,7 +42,7 @@ public class RemoveVersionArtifactId extends Recipe {
 
     @Option(displayName = "groupid",
             description = "groupid.",
-            example = "com.lodh.arte.test")
+            example = "org.refactor.eap6")
     @NonNull
     String groupid;
 

@@ -9,6 +9,7 @@ import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.refactor.eap6.yaml.util.ParserMicroprofile;
 
 import java.io.StringWriter;
 

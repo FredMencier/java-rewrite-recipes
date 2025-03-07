@@ -32,7 +32,7 @@ public class StandeloneMain {
         Recipe recipe = env.activateRecipes("org.openrewrite.java.RemoveUnusedImports");
 
         List<Path> sources = new ArrayList<>();
-        sources.add(Path.of("E:\\GIT\\java-rewrite-recipes\\src\\test\\java\\com\\lodh\\arte\\java\\ejb\\GenerateComponentRecipeTest.java"));
+        sources.add(Path.of("E:\\GIT\\java-rewrite-recipes\\src\\test\\java\\org\\refactor\\eap6\\java\\ejb\\GenerateComponentRecipeTest.java"));
         List<SourceFile> sourceFileList = jp().parse(sources, null, ctx).collect(Collectors.toList());
         InMemoryLargeSourceSet inMemoryLargeSourceSet = new InMemoryLargeSourceSet(sourceFileList);
 
