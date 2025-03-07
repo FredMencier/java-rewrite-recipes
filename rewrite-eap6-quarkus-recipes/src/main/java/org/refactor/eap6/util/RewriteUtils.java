@@ -14,7 +14,7 @@ public class RewriteUtils {
         return Arrays.stream(cleanVar.split("_")).map(RewriteUtils::firstUpperCase).collect(Collectors.joining());
     }
 
-    private static String firstUpperCase(final String s) {
+    public static String firstUpperCase(final String s) {
         return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
 }
