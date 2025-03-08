@@ -33,10 +33,10 @@ import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.*;
 import org.refactor.eap6.java.annotation.ToRest;
+import org.refactor.eap6.util.RewriteUtils;
 import org.refactor.eap6.yaml.util.SchemaConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.refactor.eap6.util.RewriteUtils;
 
 import javax.ws.rs.HttpMethod;
 import java.math.BigDecimal;
@@ -106,7 +106,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
             public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext executionContext) {
                 J.ClassDeclaration classDeclaration = super.visitClassDeclaration(classDecl, executionContext);
 
-                AppInfo appInfo = new AppInfo("myApp", "myFunctionalBlock");
+                AppInfo appInfo = new AppInfo(classDecl.getSimpleName(), classDecl.getSimpleName() + " OpenAPI definition", "1.0.0");
                 if (FindRemoteInterfaceVisitor.find(getCursor().getParentTreeCursor().getValue(), classDecl).get()) {
 
                     if (classToProcess != null) {
@@ -116,44 +116,16 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                         }
                     }
 
-                    Optional<J.Annotation> jndi = classDecl.getLeadingAnnotations().stream().filter(annotation -> annotation.getSimpleName().equals("JNDI")).findFirst();
-                    if (jndi.isPresent()) {
-                        J.Annotation annotation = jndi.get();
-                        List<Expression> arguments = annotation.getArguments();
-                        if (!arguments.isEmpty()) {
-                            Expression expression = arguments.get(0);
-                            if (expression instanceof J.Literal) {
-                                String value = (String) ((J.Literal) expression).getValue();
-                                if (value != null) {
-                                    appInfo = parseAppName(value);
-                                }
-                            } else if (expression instanceof J.FieldAccess) {
-                                String simpleName = ((J.FieldAccess) expression).getSimpleName();
-                                List<Statement> statements = classDeclaration.getBody().getStatements();
-                                Optional<Statement> jndiStatement = statements.stream().filter(statement -> ((J.VariableDeclarations) statement).getVariables().get(0).getSimpleName().equalsIgnoreCase(simpleName)).findFirst();
-                                if (jndiStatement.isPresent()) {
-                                    Statement statement = jndiStatement.get();
-                                    String value = (String) ((J.Literal) ((J.VariableDeclarations) statement).getVariables().get(0).getInitializer()).getValue();
-                                    if (value != null) {
-                                        appInfo = parseAppName(value);
-                                    }
-                                }
-                            }
+                    List<Statement> statements = classDecl.getBody().getStatements();
+                    for (Statement statement : statements) {
+                        if (statement instanceof J.MethodDeclaration) {
+                            //On build les endpoints pour toutes les méthodes remotes
+                            buildEndpoint((J.MethodDeclaration) statement, classDeclaration.getSimpleName());
                         }
-
-                        List<Statement> statements = classDecl.getBody().getStatements();
-                        for (Statement statement : statements) {
-                            if (statement instanceof J.MethodDeclaration) {
-                                //On build les endpoints pour toutes les méthodes remotes
-                                buildEndpoint((J.MethodDeclaration) statement, classDeclaration.getSimpleName());
-                            }
-                        }
-                        if (!endpointInfos.isEmpty()) {
-                            OpenAPI openAPI = buildYamlContract(appInfo);
-                            executionContext.putMessage(classDeclaration.getSimpleName(), openAPI);
-                        }
-                    } else {
-                        LOG.warn("no JNDI found for remote interface {}", classDeclaration.getSimpleName());
+                    }
+                    if (!endpointInfos.isEmpty()) {
+                        OpenAPI openAPI = buildYamlContract(appInfo);
+                        executionContext.putMessage(classDeclaration.getSimpleName(), openAPI);
                     }
                 }
                 return classDeclaration;
@@ -299,9 +271,9 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
             private OpenAPI buildYamlContract(AppInfo appInfo) {
                 OpenAPI openAPI = new OpenAPIImpl();
                 InfoImpl info = new InfoImpl();
-                info.setTitle(appInfo.functionalBlock);
-                info.setVersion("1.0");
-                info.setDescription(appInfo.appName + " API");
+                info.setTitle(appInfo.appName);
+                info.setVersion(appInfo.appVersion);
+                info.setDescription(appInfo.appDescription);
 
                 Set<Tag> tags = new HashSet<>();
                 Paths paths = new PathsImpl();
@@ -579,19 +551,6 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                 return Collections.emptyMap();
             }
 
-            /**
-             * @param jndiString
-             * @return
-             */
-            private AppInfo parseAppName(String jndiString) {
-                String[] split = jndiString.split("/");
-                if (split.length > 6) {
-                    return new AppInfo(split[3], split[4]);
-                } else {
-                    return new AppInfo("myApp", "myFunctionalBlock");
-                }
-            }
-
             private Schema getSchema(Schema.SchemaType schemaType, String format) {
                 Schema schema = new SchemaImpl();
                 schema.setType(schemaType);
@@ -743,11 +702,14 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
     class AppInfo {
         String appName;
 
-        String functionalBlock;
+        String appDescription;
 
-        AppInfo(final String appName, final String functionalBlock) {
+        String appVersion;
+
+        AppInfo(final String appName, final String appDescription, final String version) {
             this.appName = appName;
-            this.functionalBlock = functionalBlock;
+            this.appDescription = appDescription;
+            this.appVersion = version;
         }
     }
 

@@ -1,7 +1,6 @@
 package org.refactor.eap6.java.ejb;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
@@ -30,7 +29,7 @@ class EJBRemoteToRestTest implements RewriteTest {
 
       @Test
     public void shouldProduceAPIWithWrapperInputAndCurrencyRefResponse() throws IOException {
-        rewriteRun(fiscalDtoObjects, g2CommonObjects, fiscalEnumObjects,
+        rewriteRun(myObjects,
                 java("""
                         package org.refactor.eap6.svc.ejb;
                                                 
@@ -46,4 +45,44 @@ class EJBRemoteToRestTest implements RewriteTest {
         );
         assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithoutInputWrapper);
     }
+
+    private String expectedContractWithoutInputWrapper = """
+            
+            components:  {}
+            info:\s
+              description: IAnimalService OpenAPI definition
+              title: IAnimalService
+              version: 1.0.0
+            openapi: 3.0.3
+            paths:
+              /IAnimalService/getAnimals:\s
+                post:\s
+                  description: get-animals
+                  operationId: get-animals
+                  parameters:
+                  -\s
+                    in: query
+                    name: name
+                    schema:\s
+                      type: string
+                  -\s
+                    in: query
+                    name: referenceDate
+                    schema:\s
+                      format: date
+                      type: string
+                  responses:
+                    '200':\s
+                      content:
+                        application/json:\s
+                          schema:\s
+                            type: string
+                      description: OK
+                  summary: get-animals
+                  tags:
+                  - IAnimalService
+            tags:
+            -\s
+              name: IAnimalService
+            """;
 }
