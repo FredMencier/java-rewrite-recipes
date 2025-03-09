@@ -26,9 +26,8 @@ class EJBRemoteToRestTest implements RewriteTest {
         spec.parser(JavaParser.fromJavaVersion().classpath("jboss-interceptors-api_1.1_spec", "javax.transaction-api"));
     }
 
-
-      @Test
-    public void shouldProduceAPIWithWrapperInputAndCurrencyRefResponse() throws IOException {
+    @Test
+    public void shouldProduceAPIWithQueryParametersAndStringResponse() throws IOException {
         rewriteRun(myObjects,
                 java("""
                         package org.refactor.eap6.svc.ejb;
@@ -43,10 +42,33 @@ class EJBRemoteToRestTest implements RewriteTest {
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
         );
-        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithoutInputWrapper);
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithQueryParametersAndStringResponse);
     }
 
-    private String expectedContractWithoutInputWrapper = """
+    @Test
+    public void shouldProduceAPIWithQueryParametersAndListOfStringResponse() throws IOException {
+        rewriteRun(myObjects,
+                java("""
+                        package org.refactor.eap6.svc.ejb;
+                                                
+                        import java.util.Date;
+                        import javax.ejb.Remote;
+                        import java.util.List;
+                                                        
+                        @Remote
+                        public interface IAnimalService {
+                                                
+                            List<String> getAnimals(String name, Date referenceDate);
+                        }
+                        """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
+        );
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithQueryParametersAndListOfStringResponse);
+    }
+
+    private String expectedContractWithQueryParametersAndListOfStringResponse = """
+            """;
+
+    private String expectedContractWithQueryParametersAndStringResponse = """
             
             components:  {}
             info:\s
