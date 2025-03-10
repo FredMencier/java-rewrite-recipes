@@ -394,13 +394,20 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     apiResponses.addAPIResponse("default", apiResponse);
                     operation.setResponses(apiResponses);
                 } else {
-                    SchemaFormat schemaFormat = getSchemaFormat(endpointInfo.responseItemComponent.componentName);
+                    SchemaFormat schemaFormat = getSchemaFormat(endpointInfo.responseItemComponent.fullyQualified != null ? endpointInfo.responseItemComponent.fullyQualified : endpointInfo.responseItemComponent.componentName);
                     apiResponse.setDescription("OK");
                     Content content = new ContentImpl();
                     MediaType mediaType = new MediaTypeImpl();
                     Schema schema = new SchemaImpl();
                     if (!schemaFormat.schemaType.equals(Schema.SchemaType.OBJECT)) {
-                        schema.setType(Schema.SchemaType.STRING);
+                        if (endpointInfo.responseItemComponent.responseWrapper != null && isCollection(endpointInfo.responseItemComponent.responseWrapper)) {
+                            schema.setType(Schema.SchemaType.ARRAY);
+                            Schema schemaItem = new SchemaImpl();
+                            schemaItem.setType(schemaFormat.schemaType);
+                            schema.setItems(schemaItem);
+                        } else {
+                            schema.setType(schemaFormat.schemaType);
+                        }
                     } else {
                         if (endpointInfo.responseItemComponent.responseWrapper != null && isCollection(endpointInfo.responseItemComponent.responseWrapper)) {
                             schema.setType(Schema.SchemaType.ARRAY);
