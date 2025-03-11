@@ -25,6 +25,16 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>3.4.3</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-jsonSchema</artifactId>
             <version>2.17.2</version>
@@ -157,56 +167,78 @@
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>${maven-deploy-plugin.version}</version>
             </plugin>
-            <plugin>
-                <groupId>org.openapitools</groupId>
-                <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>${openapi-generator.version}</version>
-                <configuration>
-                    <typeMappings>
-                        <typeMappings>double=BigDecimal</typeMappings>
-                    </typeMappings>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>generate-api-server</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <globalProperties>
-                                <skipFormModel>false</skipFormModel>
-                            </globalProperties>
-                            <inputSpec>
-                                ${project.basedir}/
-                            </inputSpec>
-                            <generatorName>spring</generatorName>
-                            <output>${project.build.directory}/generated-sources</output>
-                            <apiPackage>${base.package}.generated.api</apiPackage>
-                            <modelPackage>${base.package}.generated.model</modelPackage>
-                            <packageName>${base.package}.generated</packageName>
-                            <invokerPackage>${base.package}.generated</invokerPackage>
-                            <!--<templateDirectory>${templates.dir}</templateDirectory>-->
-                            <generateApiTests>false</generateApiTests>
-                            <generateModelTests>false</generateModelTests>
-                            <generateSupportingFiles>false</generateSupportingFiles>
-                            <configOptions>
-                                <library>spring-boot</library>
-                                <serializableModel>true</serializableModel>
-                                <booleanGetterPrefix>is</booleanGetterPrefix>
-                                <snapshotVersion>true</snapshotVersion>
-                                <reactive>false</reactive>
-                                <interfaceOnly>true</interfaceOnly>
-                                <dateLibrary>java8</dateLibrary>
-                                <useBeanValidation>true</useBeanValidation>
-                                <skipDefaultInterface>true</skipDefaultInterface>
-                                <documentationProvider>none</documentationProvider>
-                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
-                                <useSpringBoot3>true</useSpringBoot3>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>openapi</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                    <version>3.4.3</version>
+                </dependency>
+                <dependency>
+                    <groupId>jakarta.validation</groupId>
+                    <artifactId>jakarta.validation-api</artifactId>
+                    <version>3.1.0</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openapitools</groupId>
+                        <artifactId>openapi-generator-maven-plugin</artifactId>
+                        <version>${openapi-generator.version}</version>
+                        <configuration>
+                            <typeMappings>
+                                <typeMappings>double=BigDecimal</typeMappings>
+                            </typeMappings>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>generate-api-server</id>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <globalProperties>
+                                        <skipFormModel>false</skipFormModel>
+                                    </globalProperties>
+                                    <inputSpec>
+                                        ${project.basedir}/target/IAnimalService.yaml
+                                    </inputSpec>
+                                    <generatorName>spring</generatorName>
+                                    <output>${project.build.directory}/generated-sources</output>
+                                    <apiPackage>${base.package}.generated.api</apiPackage>
+                                    <modelPackage>${base.package}.generated.model</modelPackage>
+                                    <packageName>${base.package}.generated</packageName>
+                                    <invokerPackage>${base.package}.generated</invokerPackage>
+                                    <!--<templateDirectory>${templates.dir}</templateDirectory>-->
+                                    <generateApiTests>false</generateApiTests>
+                                    <generateModelTests>false</generateModelTests>
+                                    <generateSupportingFiles>false</generateSupportingFiles>
+                                    <configOptions>
+                                        <library>spring-boot</library>
+                                        <serializableModel>true</serializableModel>
+                                        <booleanGetterPrefix>is</booleanGetterPrefix>
+                                        <snapshotVersion>true</snapshotVersion>
+                                        <reactive>false</reactive>
+                                        <interfaceOnly>true</interfaceOnly>
+                                        <dateLibrary>java8</dateLibrary>
+                                        <useBeanValidation>true</useBeanValidation>
+                                        <skipDefaultInterface>true</skipDefaultInterface>
+                                        <documentationProvider>none</documentationProvider>
+                                        <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                                        <useSpringBoot3>true</useSpringBoot3>
+                                    </configOptions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
