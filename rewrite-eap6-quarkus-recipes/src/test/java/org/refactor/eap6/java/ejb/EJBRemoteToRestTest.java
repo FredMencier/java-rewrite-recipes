@@ -16,27 +16,41 @@ import static org.openrewrite.java.Assertions.java;
 
 class EJBRemoteToRestTest implements RewriteTest {
 
-      SourceSpecs myObjects = java("""
-            package org.refactor.eap6.dto;
+    SourceSpecs classAnimal = java("""
+            package org.refactor.eap6.java.dto;
             public class Animal {
-                private String name;
-                private String animalType;
-            } public class Dog extends Animal {
-                private Integer pattes;
-            } public class Bird extends Animal {
-                private Integer ailes;
             }
-            """);
+              """);
 
-      @Override
+    SourceSpecs classDog = java("""
+            package org.refactor.eap6.java.dto;
+            public class Dog extends Animal {
+            }
+              """);
+
+    SourceSpecs classBird = java("""
+            package org.refactor.eap6.java.dto;
+            public class Bird extends Animal {
+            }
+              """);
+
+    SourceSpecs classCat = java("""
+            package org.refactor.eap6.java.dto;
+            public class Cat {
+            }
+              """);
+
+    @Override
     public void defaults(RecipeSpec spec) {
         spec.recipes(new EJBRemoteToRest(null, null)).typeValidationOptions(TypeValidation.none());
-        spec.parser(JavaParser.fromJavaVersion().classpath("jboss-interceptors-api_1.1_spec", "javax.transaction-api"));
+        spec.parser(JavaParser
+                .fromJavaVersion()
+                .classpath("jboss-interceptors-api_1.1_spec", "javax.transaction-api"));
     }
 
     @Test
     public void shouldProduceAPIWithQueryParametersAndStringResponse() throws IOException {
-        rewriteRun(myObjects,
+        rewriteRun(
                 java("""
                         package org.refactor.eap6.svc.ejb;
                                                 
@@ -54,8 +68,28 @@ class EJBRemoteToRestTest implements RewriteTest {
     }
 
     @Test
+    public void shouldProduceAPIWithQueryParametersGETAndStringResponse() throws IOException {
+        rewriteRun(
+                java("""
+                        package org.refactor.eap6.svc.ejb;
+                                                
+                        import java.util.Date;
+                        import javax.ejb.Remote;
+                                                        
+                        @Remote
+                        public interface IAnimalService {
+                            
+                            @ToRest(path="/animals", action=ToRest.Action.GET, tag="animal", description="Animals API")
+                            String getAnimals(String name, Date referenceDate);
+                        }
+                        """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
+        );
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithQueryParametersGETAndStringResponse);
+    }
+
+    @Test
     public void shouldProduceAPIWithQueryParametersAndListOfStringResponse() throws IOException {
-        rewriteRun(myObjects,
+        rewriteRun(
                 java("""
                         package org.refactor.eap6.svc.ejb;
                                                 
@@ -74,27 +108,47 @@ class EJBRemoteToRestTest implements RewriteTest {
     }
 
     @Test
+    public void shouldProduceAPIWithQueryParametersAndSetOfStringResponse() throws IOException {
+        rewriteRun(
+                java("""
+                        package org.refactor.eap6.svc.ejb;
+                                                
+                        import java.util.Date;
+                        import javax.ejb.Remote;
+                        import java.util.Set;
+                                                        
+                        @Remote
+                        public interface IAnimalService {
+                                                
+                            Set<String> getAnimals(String name, Date referenceDate);
+                        }
+                        """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
+        );
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithQueryParametersAndSetOfStringResponse);
+    }
+
+    @Test
     public void shouldProduceAPIWithRequestBodyAndListOfStringResponse() throws IOException {
-        rewriteRun(myObjects,
+        rewriteRun(classCat,
                 java("""
                         package org.refactor.eap6.svc.ejb;
                                                 
                         import java.util.Date;
                         import javax.ejb.Remote;
                         import java.util.List;
-                        import org.refactor.eap6.dto.*;
+                        import org.refactor.eap6.java.dto.*;
                                                         
                         @Remote
                         public interface IAnimalService {
                                                 
-                            List<String> getAnimals(Dog dog);
+                            List<String> getAnimals(Cat cat);
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
         );
-        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo("");
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithRequestbodyAndListOfStringResponse);
     }
 
-    private String expectedContractWithQueryParametersAndListOfStringResponse = """
+    private String expectedContractWithQueryParametersGETAndStringResponse = """
 
         components:  {}
         info:\s
@@ -103,9 +157,9 @@ class EJBRemoteToRestTest implements RewriteTest {
           version: 1.0.0
         openapi: 3.0.3
         paths:
-          /IAnimalService/getAnimals:\s
-            post:\s
-              description: get-animals
+          /animals:\s
+            get:\s
+              description: Animals API
               operationId: get-animals
               parameters:
               -\s
@@ -124,20 +178,148 @@ class EJBRemoteToRestTest implements RewriteTest {
                   content:
                     application/json:\s
                       schema:\s
-                        items:\s
-                          type: string
-                        type: array
+                        type: string
                   description: OK
               summary: get-animals
               tags:
-              - IAnimalService
+              - animal
         tags:
         -\s
-          name: IAnimalService
+          name: animal
             """;
 
+    private String expectedContractWithRequestbodyAndListOfStringResponse = """
+
+            components:\s
+              schemas:
+                Cat:\s
+                  properties:
+                    pattes:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+            info:\s
+              description: IAnimalService OpenAPI definition
+              title: IAnimalService
+              version: 1.0.0
+            openapi: 3.0.3
+            paths:
+              /IAnimalService/getAnimals:\s
+                post:\s
+                  description: get-animals
+                  operationId: get-animals
+                  requestBody:\s
+                    content:
+                      application/json:\s
+                        schema:\s
+                          $ref: '#/components/schemas/Cat'
+                    required: true
+                  responses:
+                    '200':\s
+                      content:
+                        application/json:\s
+                          schema:\s
+                            items:\s
+                              type: string
+                            type: array
+                      description: OK
+                  summary: get-animals
+                  tags:
+                  - IAnimalService
+            tags:
+            -\s
+              name: IAnimalService
+                """;
+
+    private String expectedContractWithQueryParametersAndSetOfStringResponse = """
+
+            components:  {}
+            info:\s
+              description: IAnimalService OpenAPI definition
+              title: IAnimalService
+              version: 1.0.0
+            openapi: 3.0.3
+            paths:
+              /IAnimalService/getAnimals:\s
+                post:\s
+                  description: get-animals
+                  operationId: get-animals
+                  parameters:
+                  -\s
+                    in: query
+                    name: name
+                    schema:\s
+                      type: string
+                  -\s
+                    in: query
+                    name: referenceDate
+                    schema:\s
+                      format: date
+                      type: string
+                  responses:
+                    '200':\s
+                      content:
+                        application/json:\s
+                          schema:\s
+                            items:\s
+                              type: string
+                            type: array
+                            uniqueItems: true
+                      description: OK
+                  summary: get-animals
+                  tags:
+                  - IAnimalService
+            tags:
+            -\s
+              name: IAnimalService
+                """;
+
+    private String expectedContractWithQueryParametersAndListOfStringResponse = """
+
+            components:  {}
+            info:\s
+              description: IAnimalService OpenAPI definition
+              title: IAnimalService
+              version: 1.0.0
+            openapi: 3.0.3
+            paths:
+              /IAnimalService/getAnimals:\s
+                post:\s
+                  description: get-animals
+                  operationId: get-animals
+                  parameters:
+                  -\s
+                    in: query
+                    name: name
+                    schema:\s
+                      type: string
+                  -\s
+                    in: query
+                    name: referenceDate
+                    schema:\s
+                      format: date
+                      type: string
+                  responses:
+                    '200':\s
+                      content:
+                        application/json:\s
+                          schema:\s
+                            items:\s
+                              type: string
+                            type: array
+                      description: OK
+                  summary: get-animals
+                  tags:
+                  - IAnimalService
+            tags:
+            -\s
+              name: IAnimalService
+                """;
+
     private String expectedContractWithQueryParametersAndStringResponse = """
-            
+                        
             components:  {}
             info:\s
               description: IAnimalService OpenAPI definition

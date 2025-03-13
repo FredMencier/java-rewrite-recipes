@@ -405,6 +405,9 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                             Schema schemaItem = new SchemaImpl();
                             schemaItem.setType(schemaFormat.schemaType);
                             schema.setItems(schemaItem);
+                            if (isUniqueCollection(endpointInfo.responseItemComponent.responseWrapper)) {
+                                schema.uniqueItems(true);
+                            }
                         } else {
                             schema.setType(schemaFormat.schemaType);
                         }
@@ -414,6 +417,9 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                             Schema schemaItem = new SchemaImpl();
                             schemaItem.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + endpointInfo.responseItemComponent.componentName);
                             schema.setItems(schemaItem);
+                            if (isUniqueCollection(endpointInfo.responseItemComponent.responseWrapper)) {
+                                schema.uniqueItems(true);
+                            }
                         } else {
                             schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + endpointInfo.responseItemComponent.componentName);
                         }
@@ -652,7 +658,21 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
             }
 
             private boolean isCollection(String type) {
-                return type.equalsIgnoreCase(List.class.getSimpleName()) || type.equalsIgnoreCase(Collection.class.getSimpleName()) || type.equalsIgnoreCase(Set.class.getSimpleName());
+                return type.equalsIgnoreCase(List.class.getSimpleName())
+                        || type.equalsIgnoreCase(Collection.class.getSimpleName())
+                        || type.equalsIgnoreCase(ArrayList.class.getSimpleName())
+                        || type.equalsIgnoreCase(Vector.class.getSimpleName())
+                        || type.equalsIgnoreCase(LinkedList.class.getSimpleName())
+                        || type.equalsIgnoreCase(Stack.class.getSimpleName())
+                        || isUniqueCollection(type);
+            }
+
+            private boolean isUniqueCollection(String type) {
+                return type.equalsIgnoreCase(Set.class.getSimpleName())
+                        || type.equalsIgnoreCase(SortedSet.class.getSimpleName())
+                        || type.equalsIgnoreCase(HashSet.class.getSimpleName())
+                        || type.equalsIgnoreCase(TreeSet.class.getSimpleName())
+                        || type.equalsIgnoreCase(LinkedHashSet.class.getSimpleName());
             }
 
             private Optional<String> getContainerType(String type) {
