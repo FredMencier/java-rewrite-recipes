@@ -1,6 +1,7 @@
 package org.refactor.eap6.java.dto;
 
 public class Dog extends Animal {
+
     private Integer pattes;
 
     public Dog(String name, String animalType) {

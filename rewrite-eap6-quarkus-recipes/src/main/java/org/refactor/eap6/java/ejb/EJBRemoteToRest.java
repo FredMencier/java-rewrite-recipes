@@ -174,14 +174,20 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                                 endpointInfo.responseItemComponent.responseWrapper = ((J.ParameterizedType) returnTypeExpression).getClazz().toString();
                             }
                         } else {
-                            //Map<> ouautre define a list of object wrapper Map<Obj1, Obj2> -> List<ObjWrapper> avec ObjWrapper(Obj1, Obj2)
+                            //Map<> ou autre define a list of object wrapper Map<Obj1, Obj2> -> List<ObjWrapper> avec ObjWrapper(Obj1, Obj2)
                             LOG.warn("return type Map not supported for method {}", methodDeclaration.getSimpleName());
                             ResponseItemComponent responseItemComponent = new ResponseItemComponent();
                             typeParameters.forEach(expression -> {
                                 JavaType.FullyQualified varType = TypeUtils.asFullyQualified(expression.getType());
                                 if (varType != null) {
-                                    SchemaFormat schemaFormat = getSchemaFormat(varType.getFullyQualifiedName());
-                                    responseItemComponent.componentTypeList.add(schemaFormat.schemaType);
+                                    RequestParam requestParam = new RequestParam();//TODO voir si vraiment besoin du responseItemComponent - renommer RequestParam en ComponentParam
+                                    requestParam.fullyQualified = varType.getFullyQualifiedName();
+                                    requestParam.name = varType.getClassName();
+                                    //SchemaFormat schemaFormat = getSchemaFormat(varType.getFullyQualifiedName());
+                                    Map<String, Schema> schemas = buildSchemaForObject(requestParam);
+                                    schemas.entrySet().forEach(entry -> {
+                                        responseItemComponent.componentTypeList.add(entry.getValue().getType());
+                                    });
                                 }
                             });
                             responseItemComponent.componentName = getComponentName(endpointInfo.methodName, "Response");
@@ -677,7 +683,11 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
 
             private Optional<String> getContainerType(String type) {
                 if (type.equalsIgnoreCase(Map.class.getSimpleName())) {
+                    return Optional.of("Map");
+                } else if (type.equalsIgnoreCase(List.class.getSimpleName())) {
                     return Optional.of("List");
+                } else if (type.equalsIgnoreCase(Set.class.getSimpleName())) {
+                    return Optional.of("Set");
                 } else {
                     return Optional.empty();
                 }
@@ -790,7 +800,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
         @Deprecated
         Schema.SchemaType componentType;
 
-        List<Schema.SchemaType> componentTypeList = new ArrayList<>();
+        List<Schema> componentTypeList = new ArrayList<>();
 
         String responseWrapper;
 

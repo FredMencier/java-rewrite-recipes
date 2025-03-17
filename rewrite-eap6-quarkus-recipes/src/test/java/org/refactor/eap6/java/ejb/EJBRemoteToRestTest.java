@@ -53,13 +53,13 @@ class EJBRemoteToRestTest implements RewriteTest {
         rewriteRun(
                 java("""
                         package org.refactor.eap6.svc.ejb;
-                                                
+
                         import java.util.Date;
                         import javax.ejb.Remote;
-                                                        
+
                         @Remote
                         public interface IAnimalService {
-                                                
+
                             String getAnimals(String name, Date referenceDate);
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
@@ -72,13 +72,13 @@ class EJBRemoteToRestTest implements RewriteTest {
         rewriteRun(
                 java("""
                         package org.refactor.eap6.svc.ejb;
-                                                
+
                         import java.util.Date;
                         import javax.ejb.Remote;
-                                                        
+
                         @Remote
                         public interface IAnimalService {
-                            
+
                             @ToRest(path="/animals", action=ToRest.Action.GET, tag="animal", description="Animals API")
                             String getAnimals(String name, Date referenceDate);
                         }
@@ -92,14 +92,14 @@ class EJBRemoteToRestTest implements RewriteTest {
         rewriteRun(
                 java("""
                         package org.refactor.eap6.svc.ejb;
-                                                
+
                         import java.util.Date;
                         import javax.ejb.Remote;
                         import java.util.List;
-                                                        
+
                         @Remote
                         public interface IAnimalService {
-                                                
+
                             List<String> getAnimals(String name, Date referenceDate);
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
@@ -112,14 +112,14 @@ class EJBRemoteToRestTest implements RewriteTest {
         rewriteRun(
                 java("""
                         package org.refactor.eap6.svc.ejb;
-                                                
+
                         import java.util.Date;
                         import javax.ejb.Remote;
                         import java.util.Set;
-                                                        
+
                         @Remote
                         public interface IAnimalService {
-                                                
+
                             Set<String> getAnimals(String name, Date referenceDate);
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
@@ -132,15 +132,15 @@ class EJBRemoteToRestTest implements RewriteTest {
         rewriteRun(classCat,
                 java("""
                         package org.refactor.eap6.svc.ejb;
-                                                
+
                         import java.util.Date;
                         import javax.ejb.Remote;
                         import java.util.List;
                         import org.refactor.eap6.java.dto.*;
-                                                        
+
                         @Remote
                         public interface IAnimalService {
-                                                
+
                             List<String> getAnimals(Cat cat);
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
