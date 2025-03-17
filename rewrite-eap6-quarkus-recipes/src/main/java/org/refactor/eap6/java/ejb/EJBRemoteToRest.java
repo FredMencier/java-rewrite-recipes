@@ -300,21 +300,21 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                             requestParam.name = endpointInfo.responseItemComponent.componentName;
                             Map<String, Schema> schemas = buildSchemaForObject(requestParam);
                             schemas.entrySet().forEach(entry -> {
-                                endpointInfo.additionalSchemaComponent.put(entry.getKey(), entry.getValue());
+                                //endpointInfo.additionalSchemaComponent.put(entry.getKey(), entry.getValue());
                                 components.addSchema(entry.getKey(), entry.getValue());
                             });
                         } else if (endpointInfo.responseItemComponent.componentTypeList.size() > 1) {
                             Schema schema = new SchemaImpl();
                             schema.setType(Schema.SchemaType.OBJECT);
-                            endpointInfo.responseItemComponent.componentTypeList.forEach(schemaType -> {
-                                Schema schemaItem = new SchemaImpl();
-                                schemaItem.setType(schemaType);
-                                String propName = "attr" + schemaType.name();
-                                if (schemaType.name().length() > 3) {
-                                    propName = "attr" + RewriteUtils.firstUpperCase(schemaType.name().toLowerCase().substring(0, 3));
+                            if (endpointInfo.responseItemComponent.responseWrapper != null && endpointInfo.responseItemComponent.responseWrapper.equalsIgnoreCase("Map")) {
+                                Optional<Schema> mapObj = endpointInfo.responseItemComponent.componentTypeList.stream().filter(schem -> schem.getType().equals(Schema.SchemaType.OBJECT)).findFirst();
+                                if (mapObj.isPresent()) {
+                                    Schema schemaRef = new SchemaImpl();
+                                    schemaRef.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(mapObj.get().getDescription()));
+                                    schema.setAdditionalPropertiesSchema(schemaRef);
+                                    components.addSchema(getClassName(mapObj.get().getDescription()), mapObj.get());
                                 }
-                                schema.addProperty(propName, schemaItem);
-                            });
+                            }
                             components.addSchema(endpointInfo.responseItemComponent.componentName, schema);
                         }
                     }
@@ -544,6 +544,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     if (schemas != null && !schemas.isEmpty()) {
                         schemas.entrySet().forEach(entry -> {
                             Schema schema = SchemaConverter.convert(entry.getValue());
+                            schema.setDescription(requestParam.fullyQualified);
                             if (entry.getKey().equalsIgnoreCase(getClassName(requestParam.fullyQualified))) {
                                 schemaResultMap.put(requestParam.name, schema);
                             } else {
