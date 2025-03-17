@@ -174,8 +174,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                                 endpointInfo.responseItemComponent.responseWrapper = ((J.ParameterizedType) returnTypeExpression).getClazz().toString();
                             }
                         } else {
-                            //Map<> ou autre define a list of object wrapper Map<Obj1, Obj2> -> List<ObjWrapper> avec ObjWrapper(Obj1, Obj2)
-                            LOG.warn("return type Map not supported for method {}", methodDeclaration.getSimpleName());
+                            //Map<>
                             ResponseItemComponent responseItemComponent = new ResponseItemComponent();
                             typeParameters.forEach(expression -> {
                                 JavaType.FullyQualified varType = TypeUtils.asFullyQualified(expression.getType());
