@@ -183,10 +183,9 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                                     RequestParam requestParam = new RequestParam();//TODO voir si vraiment besoin du responseItemComponent - renommer RequestParam en ComponentParam
                                     requestParam.fullyQualified = varType.getFullyQualifiedName();
                                     requestParam.name = varType.getClassName();
-                                    //SchemaFormat schemaFormat = getSchemaFormat(varType.getFullyQualifiedName());
                                     Map<String, Schema> schemas = buildSchemaForObject(requestParam);
                                     schemas.entrySet().forEach(entry -> {
-                                        responseItemComponent.componentTypeList.add(entry.getValue().getType());
+                                        responseItemComponent.componentTypeList.add(entry.getValue());
                                     });
                                 }
                             });

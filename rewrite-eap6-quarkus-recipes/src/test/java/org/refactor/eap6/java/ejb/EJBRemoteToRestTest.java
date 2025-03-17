@@ -193,6 +193,7 @@ class EJBRemoteToRestTest implements RewriteTest {
             components:\s
               schemas:
                 Cat:\s
+                  description: org.refactor.eap6.java.dto.Cat
                   properties:
                     pattes:\s
                       format: int32

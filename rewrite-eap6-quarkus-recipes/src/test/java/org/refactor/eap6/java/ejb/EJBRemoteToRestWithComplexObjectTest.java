@@ -86,6 +86,68 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
     }
 
     private String expectedContractWithWrapperRequestBodyAndWrapperResponse = """
+
+            components:\s
+              schemas:
+                GetAnimalsRequest:\s
+                  description: Wrapper for Country, Cat
+                  properties:
+                    country:\s
+                      $ref: '#/components/schemas/Country'
+                    cat:\s
+                      $ref: '#/components/schemas/Cat'
+                  type: object
+                Cat:\s
+                  description: org.refactor.eap6.java.dto.Cat
+                  properties:
+                    pattes:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+                Country:\s
+                  description: org.refactor.eap6.java.dto.Country
+                  properties:
+                    avarageTemperature:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+                GetAnimalsResponse:\s
+                  additionalProperties:\s
+                    $ref: '#/components/schemas/Cat'
+                  type: object
+            info:\s
+              description: IAnimalService OpenAPI definition
+              title: IAnimalService
+              version: 1.0.0
+            openapi: 3.0.3
+            paths:
+              /IAnimalService/getAnimals:\s
+                post:\s
+                  description: get-animals
+                  operationId: get-animals
+                  requestBody:\s
+                    content:
+                      application/json:\s
+                        schema:\s
+                          $ref: '#/components/schemas/GetAnimalsRequest'
+                    required: true
+                  responses:
+                    '200':\s
+                      content:
+                        application/json:\s
+                          schema:\s
+                            $ref: '#/components/schemas/GetAnimalsResponse'
+                      description: OK
+                  summary: get-animals
+                  tags:
+                  - IAnimalService
+            tags:
+            -\s
+              name: IAnimalService
             """;
 
     private String expectedContractWithWrapperRequestbodyAndListOfStringResponse = """
@@ -101,6 +163,7 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
                       $ref: '#/components/schemas/Cat'
                   type: object
                 Cat:\s
+                  description: org.refactor.eap6.java.dto.Cat
                   properties:
                     pattes:\s
                       format: int32
@@ -109,6 +172,7 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
                       type: string
                   type: object
                 Country:\s
+                  description: org.refactor.eap6.java.dto.Country
                   properties:
                     avarageTemperature:\s
                       format: int32
