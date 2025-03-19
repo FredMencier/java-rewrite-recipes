@@ -65,7 +65,7 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
     }
 
     @Test
-    public void shouldProduceAPIWithWrapperRequestBodyAndWrapperResponse() throws IOException {
+    public void shouldProduceAPIWithWrapperRequestBodyAndMapResponse() throws IOException {
         rewriteRun(classCat, classCountry,
                 java("""
                         package org.refactor.eap6.svc.ejb;
@@ -82,10 +82,84 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
         );
-        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithWrapperRequestBodyAndWrapperResponse);
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithWrapperRequestBodyAndMapResponse);
     }
 
-    private String expectedContractWithWrapperRequestBodyAndWrapperResponse = """
+    @Test
+    public void shouldProduceAPIMapResponse() throws IOException {
+        rewriteRun(classCat, classCountry,
+                java("""
+                        package org.refactor.eap6.svc.ejb;
+
+                        import java.util.Date;
+                        import javax.ejb.Remote;
+                        import java.util.List;
+                        import org.refactor.eap6.java.dto.*;
+
+                        @Remote
+                        public interface IAnimalService {
+
+                            Map<String, List<List<Map<String, Cat>>>> getAnimals(String cat, String country);
+                        }
+                        """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
+        );
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithMapResponse);
+    }
+
+    private String expectedContractWithMapResponse = """
+
+        components:\s
+          schemas:
+            Cat:\s
+              description: org.refactor.eap6.java.dto.Cat
+              properties:
+                pattes:\s
+                  format: int32
+                  type: integer
+                name:\s
+                  type: string
+              type: object
+            GetAnimalsResponse:\s
+              additionalProperties:\s
+                $ref: '#/components/schemas/Cat'
+              type: object
+        info:\s
+          description: IAnimalService OpenAPI definition
+          title: IAnimalService
+          version: 1.0.0
+        openapi: 3.0.3
+        paths:
+          /IAnimalService/getAnimals:\s
+            post:\s
+              description: get-animals
+              operationId: get-animals
+              parameters:
+              -\s
+                in: query
+                name: country
+                schema:\s
+                  type: string
+              -\s
+                in: query
+                name: cat
+                schema:\s
+                  type: string
+              responses:
+                '200':\s
+                  content:
+                    application/json:\s
+                      schema:\s
+                        $ref: '#/components/schemas/GetAnimalsResponse'
+                  description: OK
+              summary: get-animals
+              tags:
+              - IAnimalService
+        tags:
+        -\s
+          name: IAnimalService
+        """;
+
+    private String expectedContractWithWrapperRequestBodyAndMapResponse = """
 
             components:\s
               schemas:
@@ -180,6 +254,12 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
                     name:\s
                       type: string
                   type: object
+                GetAnimalsResponse:\s
+                  items:\s
+                    properties:
+                      String:\s
+                        type: string
+                  type: array
             info:\s
               description: IAnimalService OpenAPI definition
               title: IAnimalService
@@ -201,9 +281,7 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
                       content:
                         application/json:\s
                           schema:\s
-                            items:\s
-                              type: string
-                            type: array
+                            $ref: '#/components/schemas/GetAnimalsResponse'
                       description: OK
                   summary: get-animals
                   tags:
