@@ -267,6 +267,26 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                 endpointInfos.add(endpointInfo);
             }
 
+            private Schema buildSchema(TypeTree parameterType, Map<String, Schema> additionalSchemaComponent) {
+                Schema schema = new SchemaImpl();
+                if (parameterType instanceof J.ParameterizedType) {
+                    List<Expression> typeParameters = ((J.ParameterizedType) parameterType).getTypeParameters();
+                    String simpleName = ((J.Identifier) (((J.ParameterizedType) parameterType).getClazz())).getSimpleName();
+                    if (isCollection(simpleName)) {
+                        schema.setType(Schema.SchemaType.ARRAY);
+                        Expression last = typeParameters.get(0);
+                        schema.setItems(buildSchema((TypeTree) last, additionalSchemaComponent));
+                    }
+                } else {
+                    Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
+                    schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
+                    schemaMap.entrySet().forEach(entry -> {
+                        additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
+                    });
+                }
+                return schema;
+            }
+
             /**
              * On construit le contrat OpenAPI
              * @param appInfo
