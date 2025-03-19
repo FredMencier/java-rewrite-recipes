@@ -150,7 +150,10 @@ class EJBRemoteToRestTest implements RewriteTest {
 
     private String expectedContractWithQueryParametersGETAndStringResponse = """
 
-        components:  {}
+        components:\s
+          schemas:
+            GetAnimalsResponse:\s
+              type: string
         info:\s
           description: IAnimalService OpenAPI definition
           title: IAnimalService
@@ -178,7 +181,7 @@ class EJBRemoteToRestTest implements RewriteTest {
                   content:
                     application/json:\s
                       schema:\s
-                        type: string
+                        $ref: '#/components/schemas/GetAnimalsResponse'
                   description: OK
               summary: get-animals
               tags:
@@ -201,6 +204,12 @@ class EJBRemoteToRestTest implements RewriteTest {
                     name:\s
                       type: string
                   type: object
+                GetAnimalsResponse:\s
+                  items:\s
+                    properties:
+                      String:\s
+                        type: string
+                  type: array
             info:\s
               description: IAnimalService OpenAPI definition
               title: IAnimalService
@@ -222,9 +231,7 @@ class EJBRemoteToRestTest implements RewriteTest {
                       content:
                         application/json:\s
                           schema:\s
-                            items:\s
-                              type: string
-                            type: array
+                            $ref: '#/components/schemas/GetAnimalsResponse'
                       description: OK
                   summary: get-animals
                   tags:
@@ -236,7 +243,15 @@ class EJBRemoteToRestTest implements RewriteTest {
 
     private String expectedContractWithQueryParametersAndSetOfStringResponse = """
 
-            components:  {}
+            components:\s
+              schemas:
+                GetAnimalsResponse:\s
+                  items:\s
+                    properties:
+                      String:\s
+                        type: string
+                  type: array
+                  uniqueItems: true
             info:\s
               description: IAnimalService OpenAPI definition
               title: IAnimalService
@@ -264,10 +279,7 @@ class EJBRemoteToRestTest implements RewriteTest {
                       content:
                         application/json:\s
                           schema:\s
-                            items:\s
-                              type: string
-                            type: array
-                            uniqueItems: true
+                            $ref: '#/components/schemas/GetAnimalsResponse'
                       description: OK
                   summary: get-animals
                   tags:
@@ -279,7 +291,14 @@ class EJBRemoteToRestTest implements RewriteTest {
 
     private String expectedContractWithQueryParametersAndListOfStringResponse = """
 
-            components:  {}
+            components:\s
+              schemas:
+                GetAnimalsResponse:\s
+                  items:\s
+                    properties:
+                      String:\s
+                        type: string
+                  type: array
             info:\s
               description: IAnimalService OpenAPI definition
               title: IAnimalService
@@ -307,9 +326,7 @@ class EJBRemoteToRestTest implements RewriteTest {
                       content:
                         application/json:\s
                           schema:\s
-                            items:\s
-                              type: string
-                            type: array
+                            $ref: '#/components/schemas/GetAnimalsResponse'
                       description: OK
                   summary: get-animals
                   tags:
@@ -321,7 +338,10 @@ class EJBRemoteToRestTest implements RewriteTest {
 
     private String expectedContractWithQueryParametersAndStringResponse = """
                         
-            components:  {}
+            components:\s
+              schemas:
+                GetAnimalsResponse:\s
+                  type: string
             info:\s
               description: IAnimalService OpenAPI definition
               title: IAnimalService
@@ -349,7 +369,7 @@ class EJBRemoteToRestTest implements RewriteTest {
                       content:
                         application/json:\s
                           schema:\s
-                            type: string
+                            $ref: '#/components/schemas/GetAnimalsResponse'
                       description: OK
                   summary: get-animals
                   tags:
