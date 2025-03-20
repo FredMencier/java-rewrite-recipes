@@ -305,26 +305,26 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     }
                 } else {
                     Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
+                    String key;
+                    if (parameterType instanceof J.Primitive) {
+                        key = ((J.Primitive) parameterType).getType().toString();
+                    } else {
+                        key = ((J.Identifier) parameterType).getSimpleName();
+                    }
                     if (schemaMap.size() == 1) {
-                        String key;
-                        if (parameterType instanceof J.Primitive) {
-                            key = ((J.Primitive) parameterType).getType().toString();
-                        } else {
-                            key = ((J.Identifier) parameterType).getSimpleName();
-                        }
                         Schema schemaObject = schemaMap.get(key);
                         if (schemaObject.getType().equals(Schema.SchemaType.OBJECT)) {
-                            schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
+                            schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
                             schemaMap.entrySet().forEach(entry -> {
-                                additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
+                                additionalSchemaComponent.put(key, entry.getValue());
                             });
                         } else {
                             schema.setType(schemaObject.getType());
                         }
                     } else {
-                        schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
+                        schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
                         schemaMap.entrySet().forEach(entry -> {
-                            additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
+                            additionalSchemaComponent.put(key, entry.getValue());
                         });
                     }
                 }
