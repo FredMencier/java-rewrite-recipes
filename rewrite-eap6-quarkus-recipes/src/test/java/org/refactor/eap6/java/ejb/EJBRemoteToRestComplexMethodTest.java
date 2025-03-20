@@ -14,7 +14,7 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 
-class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
+class EJBRemoteToRestComplexMethodTest implements RewriteTest {
 
 
     SourceSpecs classCountry = java("""

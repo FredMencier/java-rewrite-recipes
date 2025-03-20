@@ -14,7 +14,7 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 
-class EJBRemoteToRestTest implements RewriteTest {
+class EJBRemoteToRestBasicMethodTest implements RewriteTest {
 
     SourceSpecs classAnimal = java("""
             package org.refactor.eap6.java.dto;
