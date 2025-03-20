@@ -286,6 +286,12 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                 endpointInfos.add(endpointInfo);
             }
 
+            /**
+             *
+             * @param parameterType
+             * @param additionalSchemaComponent
+             * @return
+             */
             private Schema buildSchema(TypeTree parameterType, Map<String, Schema> additionalSchemaComponent) {
                 Schema schema = new SchemaImpl();
                 if (parameterType instanceof J.ParameterizedType) {
