@@ -290,6 +290,9 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     String simpleName = ((J.Identifier) (((J.ParameterizedType) parameterType).getClazz())).getSimpleName();
                     if (isCollection(simpleName)) {
                         schema.setType(Schema.SchemaType.ARRAY);
+                        if (isUniqueCollection(simpleName)) {
+                            schema.uniqueItems(true);
+                        }
                         Expression last = typeParameters.get(0);
                         schema.setItems(buildSchema((TypeTree) last, additionalSchemaComponent));
                     } else if (isMap(simpleName)) {
@@ -299,10 +302,27 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     }
                 } else {
                     Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
-                    schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
-                    schemaMap.entrySet().forEach(entry -> {
-                        additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
-                    });
+                    if (schemaMap.size() == 1) {
+                        Schema schemaObject = schemaMap.get(((J.Identifier) parameterType).getSimpleName());
+                        if (schemaObject.getType().equals(Schema.SchemaType.OBJECT)) {
+                            schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
+                            schemaMap.entrySet().forEach(entry -> {
+                                additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
+                            });
+                        } else {
+                            schema.setType(schemaObject.getType());
+                        }
+                    } else {
+                        schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
+                        schemaMap.entrySet().forEach(entry -> {
+                            additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
+                        });
+                    }
+
+                    //schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
+                    //schemaMap.entrySet().forEach(entry -> {
+                    //    additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
+                    //});
                 }
                 return schema;
             }

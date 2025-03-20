@@ -247,9 +247,7 @@ class EJBRemoteToRestTest implements RewriteTest {
               schemas:
                 GetAnimalsResponse:\s
                   items:\s
-                    properties:
-                      String:\s
-                        type: string
+                    type: string
                   type: array
                   uniqueItems: true
             info:\s
@@ -295,9 +293,7 @@ class EJBRemoteToRestTest implements RewriteTest {
               schemas:
                 GetAnimalsResponse:\s
                   items:\s
-                    properties:
-                      String:\s
-                        type: string
+                    type: string
                   type: array
             info:\s
               description: IAnimalService OpenAPI definition

@@ -86,7 +86,7 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
     }
 
     @Test
-    public void shouldProduceAPIMapResponse() throws IOException {
+    public void shouldProduceAPIWithMultiListResponse() throws IOException {
         rewriteRun(classCat, classCountry,
                 java("""
                         package org.refactor.eap6.svc.ejb;
@@ -99,14 +99,14 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
                         @Remote
                         public interface IAnimalService {
 
-                            Map<String, List<List<Map<String, Cat>>>> getAnimals(String cat, String country);
+                            List<List<Cat>> getAnimals(String cat, String country);
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
         );
-        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithMapResponse);
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithMultiListResponse);
     }
 
-    private String expectedContractWithMapResponse = """
+    private String expectedContractWithMultiListResponse = """
 
         components:\s
           schemas:
@@ -120,9 +120,11 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
                   type: string
               type: object
             GetAnimalsResponse:\s
-              additionalProperties:\s
-                $ref: '#/components/schemas/Cat'
-              type: object
+              items:\s
+                items:\s
+                  $ref: '#/components/schemas/Cat'
+                type: array
+              type: array
         info:\s
           description: IAnimalService OpenAPI definition
           title: IAnimalService
@@ -256,9 +258,7 @@ class EJBRemoteToRestWithComplexObjectTest implements RewriteTest {
                   type: object
                 GetAnimalsResponse:\s
                   items:\s
-                    properties:
-                      String:\s
-                        type: string
+                    type: string
                   type: array
             info:\s
               description: IAnimalService OpenAPI definition
