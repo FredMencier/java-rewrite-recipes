@@ -306,7 +306,13 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                 } else {
                     Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
                     if (schemaMap.size() == 1) {
-                        Schema schemaObject = schemaMap.get(((J.Identifier) parameterType).getSimpleName());
+                        String key;
+                        if (parameterType instanceof J.Primitive) {
+                            key = ((J.Primitive) parameterType).getType().toString();
+                        } else {
+                            key = ((J.Identifier) parameterType).getSimpleName();
+                        }
+                        Schema schemaObject = schemaMap.get(key);
                         if (schemaObject.getType().equals(Schema.SchemaType.OBJECT)) {
                             schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
                             schemaMap.entrySet().forEach(entry -> {
@@ -391,7 +397,11 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
             private Map<String, Schema> getComponentSchemas(TypeTree parameterType) {
                 ComponentParam componentParam = new ComponentParam();
                 componentParam.fullyQualified = parameterType.getType().toString();
-                componentParam.name = ((J.Identifier) parameterType).getSimpleName();
+                if (parameterType instanceof J.Identifier) {
+                    componentParam.name = ((J.Identifier) parameterType).getSimpleName();
+                } else if (parameterType instanceof J.Primitive) {
+                    componentParam.name = ((J.Primitive) parameterType).toString();
+                }
                 return buildSchemaForObject(componentParam);
             }
 
