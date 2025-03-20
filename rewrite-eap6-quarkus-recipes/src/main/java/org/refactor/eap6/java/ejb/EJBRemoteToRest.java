@@ -42,6 +42,9 @@ import javax.ws.rs.HttpMethod;
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -142,8 +145,8 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                 endpointInfo.operationId = toDashCase(methodDeclaration.getSimpleName());
                 TypeTree returnTypeExpression = methodDeclaration.getReturnTypeExpression();
 
-                Schema sc = new SchemaImpl();
-                produceSchemaForResponse(returnTypeExpression, sc, endpointInfo.additionalSchemaComponent);
+//                Schema sc = new SchemaImpl();
+//                produceSchemaForResponse(returnTypeExpression, sc, endpointInfo.additionalSchemaComponent);
                 Schema res = buildSchema(returnTypeExpression, endpointInfo.additionalSchemaComponent);
                 ResponseItemComponent responseItemComponent = new ResponseItemComponent();
                 responseItemComponent.componentName = getComponentName(endpointInfo.methodName, "Response");
@@ -318,73 +321,67 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                             additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
                         });
                     }
-
-                    //schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
-                    //schemaMap.entrySet().forEach(entry -> {
-                    //    additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
-                    //});
                 }
                 return schema;
             }
 
-            @Deprecated
-            //not really recursive
-            private void produceSchemaForResponse(TypeTree parameterType, Schema schemaResponse, Map<String, Schema> additionalSchemaComponent) {
-                if (parameterType instanceof J.ParameterizedType) {
-                    List<Expression> typeParameters = ((J.ParameterizedType) parameterType).getTypeParameters();
-                    String simpleName = ((J.Identifier) (((J.ParameterizedType) parameterType).getClazz())).getSimpleName();
-                    if ("Map".equalsIgnoreCase(simpleName)) {
-                        Schema sc = new SchemaImpl();
-                        schemaResponse.setType(Schema.SchemaType.OBJECT);
-                        schemaResponse.setAdditionalPropertiesSchema(sc);
-                        Expression last = typeParameters.get(1);
-                        produceSchemaForResponse((TypeTree) last, schemaResponse, additionalSchemaComponent);
-                    } else if (isCollection(simpleName)) {
-                        if (schemaResponse.getAdditionalPropertiesSchema() != null) {
-                            schemaResponse.getAdditionalPropertiesSchema().setType(Schema.SchemaType.ARRAY);
-                            if (isUniqueCollection(simpleName)) {
-                                schemaResponse.getAdditionalPropertiesSchema().uniqueItems(true);
-                            }
-                            schemaResponse.getAdditionalPropertiesSchema().setItems(new SchemaImpl());
-                            typeParameters.forEach(expression -> {
-                                produceSchemaForResponse((TypeTree) expression, schemaResponse, additionalSchemaComponent);
-                            });
-                        } else {
-                            //TODO voir le case
-                            schemaResponse.setType(Schema.SchemaType.ARRAY);
-                            Schema schemaItem = new SchemaImpl();
-                            schemaResponse.setItems(schemaItem);
-                            if (isUniqueCollection(simpleName)) {
-                                schemaResponse.uniqueItems(true);
-                            }
-                            typeParameters.forEach(expression -> {
-                                produceSchemaForResponse((TypeTree) expression, schemaResponse, additionalSchemaComponent);
-                            });
-                        }
-                    }
-                } else if (parameterType instanceof J.Identifier) {
-                    if (schemaResponse.getAdditionalPropertiesSchema() != null) {
-                        schemaResponse.getAdditionalPropertiesSchema().setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
-                        Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
-                        schemaMap.entrySet().forEach(entry -> {
-                            additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
-                        });
-                    } else if (schemaResponse.getItems() != null) {
-                        Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
-                        schemaMap.entrySet().forEach(entry -> {
-                            schemaResponse.getItems().addProperty(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
-                        });
-                    } else {
-                        Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
-                        Schema schema = schemaMap.get(((J.Identifier) parameterType).getSimpleName());
-                        if (schema.getType().equals(Schema.SchemaType.OBJECT)) {
-                            //TODO
-                        } else {
-                            schemaResponse.setType(schema.getType());
-                        }
-                    }
-                }
-            }
+//            @Deprecated
+//            private void produceSchemaForResponse(TypeTree parameterType, Schema schemaResponse, Map<String, Schema> additionalSchemaComponent) {
+//                if (parameterType instanceof J.ParameterizedType) {
+//                    List<Expression> typeParameters = ((J.ParameterizedType) parameterType).getTypeParameters();
+//                    String simpleName = ((J.Identifier) (((J.ParameterizedType) parameterType).getClazz())).getSimpleName();
+//                    if ("Map".equalsIgnoreCase(simpleName)) {
+//                        Schema sc = new SchemaImpl();
+//                        schemaResponse.setType(Schema.SchemaType.OBJECT);
+//                        schemaResponse.setAdditionalPropertiesSchema(sc);
+//                        Expression last = typeParameters.get(1);
+//                        produceSchemaForResponse((TypeTree) last, schemaResponse, additionalSchemaComponent);
+//                    } else if (isCollection(simpleName)) {
+//                        if (schemaResponse.getAdditionalPropertiesSchema() != null) {
+//                            schemaResponse.getAdditionalPropertiesSchema().setType(Schema.SchemaType.ARRAY);
+//                            if (isUniqueCollection(simpleName)) {
+//                                schemaResponse.getAdditionalPropertiesSchema().uniqueItems(true);
+//                            }
+//                            schemaResponse.getAdditionalPropertiesSchema().setItems(new SchemaImpl());
+//                            typeParameters.forEach(expression -> {
+//                                produceSchemaForResponse((TypeTree) expression, schemaResponse, additionalSchemaComponent);
+//                            });
+//                        } else {
+//                            //TODO voir le case
+//                            schemaResponse.setType(Schema.SchemaType.ARRAY);
+//                            Schema schemaItem = new SchemaImpl();
+//                            schemaResponse.setItems(schemaItem);
+//                            if (isUniqueCollection(simpleName)) {
+//                                schemaResponse.uniqueItems(true);
+//                            }
+//                            typeParameters.forEach(expression -> {
+//                                produceSchemaForResponse((TypeTree) expression, schemaResponse, additionalSchemaComponent);
+//                            });
+//                        }
+//                    }
+//                } else if (parameterType instanceof J.Identifier) {
+//                    if (schemaResponse.getAdditionalPropertiesSchema() != null) {
+//                        schemaResponse.getAdditionalPropertiesSchema().setRef(ROOT_PATH_COMPONENTS_SCHEMAS + ((J.Identifier) parameterType).getSimpleName());
+//                        Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
+//                        schemaMap.entrySet().forEach(entry -> {
+//                            additionalSchemaComponent.put(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
+//                        });
+//                    } else if (schemaResponse.getItems() != null) {
+//                        Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
+//                        schemaMap.entrySet().forEach(entry -> {
+//                            schemaResponse.getItems().addProperty(((J.Identifier) parameterType).getSimpleName(), entry.getValue());
+//                        });
+//                    } else {
+//                        Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
+//                        Schema schema = schemaMap.get(((J.Identifier) parameterType).getSimpleName());
+//                        if (schema.getType().equals(Schema.SchemaType.OBJECT)) {
+//                            //TODO
+//                        } else {
+//                            schemaResponse.setType(schema.getType());
+//                        }
+//                    }
+//                }
+//            }
 
             /**
              *
@@ -804,7 +801,17 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
             }
 
             private boolean isMap(String type) {
-                return type.equalsIgnoreCase(Map.class.getSimpleName());
+                return type.equalsIgnoreCase(Map.class.getSimpleName())
+                        || type.equalsIgnoreCase(HashMap.class.getSimpleName())
+                        || type.equalsIgnoreCase(LinkedHashMap.class.getSimpleName())
+                        || type.equalsIgnoreCase(TreeMap.class.getSimpleName())
+                        || type.equalsIgnoreCase(Hashtable.class.getSimpleName())
+                        || type.equalsIgnoreCase(ConcurrentHashMap.class.getSimpleName())
+                        || type.equalsIgnoreCase(ConcurrentMap.class.getSimpleName())
+                        || type.equalsIgnoreCase(ConcurrentSkipListMap.class.getSimpleName())
+                        || type.equalsIgnoreCase(EnumMap.class.getSimpleName())
+                        || type.equalsIgnoreCase(SortedMap.class.getSimpleName())
+                        || type.equalsIgnoreCase(NavigableMap.class.getSimpleName());
             }
 
             private boolean isUniqueCollection(String type) {

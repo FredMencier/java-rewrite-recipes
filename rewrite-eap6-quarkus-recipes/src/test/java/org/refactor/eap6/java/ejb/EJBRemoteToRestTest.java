@@ -206,9 +206,7 @@ class EJBRemoteToRestTest implements RewriteTest {
                   type: object
                 GetAnimalsResponse:\s
                   items:\s
-                    properties:
-                      String:\s
-                        type: string
+                    type: string
                   type: array
             info:\s
               description: IAnimalService OpenAPI definition

@@ -19,7 +19,7 @@
         <maven.compiler.testTarget>21</maven.compiler.testTarget>
 
         <surfire.plugin.version>3.5.2</surfire.plugin.version>
-        <openapi-generator.version>7.3.0</openapi-generator.version>
+        <openapi-generator.version>7.11.0</openapi-generator.version>
         <base.package>org.refactor</base.package>
     </properties>
 
@@ -215,7 +215,6 @@
                                     <modelPackage>${base.package}.generated.model</modelPackage>
                                     <packageName>${base.package}.generated</packageName>
                                     <invokerPackage>${base.package}.generated</invokerPackage>
-                                    <!--<templateDirectory>${templates.dir}</templateDirectory>-->
                                     <generateApiTests>false</generateApiTests>
                                     <generateModelTests>false</generateModelTests>
                                     <generateSupportingFiles>false</generateSupportingFiles>
@@ -224,6 +223,7 @@
                                         <serializableModel>true</serializableModel>
                                         <booleanGetterPrefix>is</booleanGetterPrefix>
                                         <snapshotVersion>true</snapshotVersion>
+                                        <openApiNullable>false</openApiNullable>
                                         <reactive>false</reactive>
                                         <interfaceOnly>true</interfaceOnly>
                                         <dateLibrary>java8</dateLibrary>
