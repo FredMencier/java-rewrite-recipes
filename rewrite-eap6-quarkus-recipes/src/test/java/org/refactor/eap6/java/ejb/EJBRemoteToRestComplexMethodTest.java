@@ -86,6 +86,27 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
     }
 
     @Test
+    public void shouldProduceAPIWithWrapperRequestBodyAndWrapperResponse() throws IOException {
+        rewriteRun(classCat, classCountry,
+                java("""
+                        package org.refactor.eap6.svc.ejb;
+
+                        import java.util.Date;
+                        import javax.ejb.Remote;
+                        import java.util.List;
+                        import org.refactor.eap6.java.dto.*;
+
+                        @Remote
+                        public interface IAnimalService {
+
+                            Map<Long, Map<String, Cat>> getAnimals(Cat cat, Country country);
+                        }
+                        """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
+        );
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithWrapperRequestBodyAndWrapperResponse);
+    }
+
+    @Test
     public void shouldProduceAPIWithWrapperRequestBodyAndMapStringResponse() throws IOException {
         rewriteRun(classCat, classCountry,
                 java("""
@@ -147,6 +168,83 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
         );
         assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithMultiListAndMapResponse);
     }
+
+    private String expectedContractWithWrapperRequestBodyAndWrapperResponse = """
+
+            components:\s
+              schemas:
+                GetAnimalsRequest:\s
+                  description: Wrapper for Country, Cat
+                  properties:
+                    country:\s
+                      $ref: '#/components/schemas/Country'
+                    cat:\s
+                      $ref: '#/components/schemas/Cat'
+                  type: object
+                Cat:\s
+                  description: org.refactor.eap6.java.dto.Cat
+                  properties:
+                    pattes:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+                CompositeMapResponse1:\s
+                  description: wrapper for Map [Long, Map<String, Cat>]
+                  properties:
+                    first:\s
+                      items:\s
+                        format: int64
+                        type: integer
+                      type: array
+                    last:\s
+                      items:\s
+                        additionalProperties:\s
+                          $ref: '#/components/schemas/Cat'
+                        type: object
+                      type: array
+                Country:\s
+                  description: org.refactor.eap6.java.dto.Country
+                  properties:
+                    avarageTemperature:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+                GetAnimalsResponse:\s
+                  $ref: '#/components/schemas/CompositeMapResponse1'
+            info:\s
+              description: IAnimalService OpenAPI definition
+              title: IAnimalService
+              version: 1.0.0
+            openapi: 3.0.3
+            paths:
+              /IAnimalService/getAnimals:\s
+                post:\s
+                  description: get-animals
+                  operationId: get-animals
+                  requestBody:\s
+                    content:
+                      application/json:\s
+                        schema:\s
+                          $ref: '#/components/schemas/GetAnimalsRequest'
+                    required: true
+                  responses:
+                    '200':\s
+                      content:
+                        application/json:\s
+                          schema:\s
+                            $ref: '#/components/schemas/GetAnimalsResponse'
+                      description: OK
+                  summary: get-animals
+                  tags:
+                  - IAnimalService
+            tags:
+            -\s
+              name: IAnimalService
+            """;
 
     private String expectedContractWithWrapperRequestBodyAndMapStringResponse = """
     
