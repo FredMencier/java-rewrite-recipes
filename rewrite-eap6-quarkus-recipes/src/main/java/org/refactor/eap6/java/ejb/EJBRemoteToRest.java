@@ -147,7 +147,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
 
 //                Schema sc = new SchemaImpl();
 //                produceSchemaForResponse(returnTypeExpression, sc, endpointInfo.additionalSchemaComponent);
-                Schema res = buildSchema(returnTypeExpression, endpointInfo.additionalSchemaComponent);
+                Schema res = buildSchema(returnTypeExpression, endpointInfo.additionalSchemaComponent, 0);
                 ResponseItemComponent responseItemComponent = new ResponseItemComponent();
                 responseItemComponent.componentName = getComponentName(endpointInfo.methodName, "Response");
                 responseItemComponent.componentTypeList.add(res);
@@ -292,8 +292,9 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
              * @param additionalSchemaComponent
              * @return
              */
-            private Schema buildSchema(TypeTree parameterType, Map<String, Schema> additionalSchemaComponent) {
+            private Schema buildSchema(TypeTree parameterType, Map<String, Schema> additionalSchemaComponent, int depth) {
                 Schema schema = new SchemaImpl();
+                depth++;
                 if (parameterType instanceof J.ParameterizedType) {
                     List<Expression> typeParameters = ((J.ParameterizedType) parameterType).getTypeParameters();
                     String simpleName = ((J.Identifier) (((J.ParameterizedType) parameterType).getClazz())).getSimpleName();
@@ -303,11 +304,33 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                             schema.uniqueItems(true);
                         }
                         Expression last = typeParameters.get(0);
-                        schema.setItems(buildSchema((TypeTree) last, additionalSchemaComponent));
+                        schema.setItems(buildSchema((TypeTree) last, additionalSchemaComponent, depth));
                     } else if (isMap(simpleName)) {
-                        schema.setType(Schema.SchemaType.OBJECT);
+                        Expression first = typeParameters.get(0);
                         Expression last = typeParameters.get(1);
-                        schema.setAdditionalPropertiesSchema(buildSchema((TypeTree) last, additionalSchemaComponent));
+                        String fullyQualifiedType = first.getType().toString();
+                        if (fullyQualifiedType.equals(String.class.getName())) {
+                            schema.setType(Schema.SchemaType.OBJECT);
+                            schema.setAdditionalPropertiesSchema(buildSchema((TypeTree) last, additionalSchemaComponent, depth));
+                        } else {
+                            String objectName = "CompositeMapResponse" + depth;
+                            schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + objectName);
+                            Schema schemaMapComposite = new SchemaImpl();
+                            schemaMapComposite.setDescription("wrapper for Map " + typeParameters);
+                            Schema schemaFirst = buildSchema((TypeTree) first, additionalSchemaComponent, depth);
+                            Schema schemaFirstList = new SchemaImpl();
+                            schemaFirstList.setType(Schema.SchemaType.ARRAY);
+                            schemaFirstList.setItems(schemaFirst);
+
+                            Schema schemaLast = buildSchema((TypeTree) last, additionalSchemaComponent, depth);
+                            Schema schemaLastList = new SchemaImpl();
+                            schemaLastList.setType(Schema.SchemaType.ARRAY);
+                            schemaLastList.setItems(schemaLast);
+
+                            schemaMapComposite.addProperty("first", schemaFirstList);
+                            schemaMapComposite.addProperty("last", schemaLastList);
+                            additionalSchemaComponent.put(objectName, schemaMapComposite);
+                        }
                     }
                 } else {
                     Map<String, Schema> schemaMap = getComponentSchemas(parameterType);
@@ -326,6 +349,9 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                             });
                         } else {
                             schema.setType(schemaObject.getType());
+                            if (schemaObject.getFormat() != null) {
+                                schema.setFormat(schemaObject.getFormat());
+                            }
                         }
                     } else {
                         schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
