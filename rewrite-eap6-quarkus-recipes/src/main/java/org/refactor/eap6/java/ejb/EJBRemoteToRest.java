@@ -145,10 +145,10 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                 endpointInfo.operationId = toDashCase(methodDeclaration.getSimpleName());
                 TypeTree returnTypeExpression = methodDeclaration.getReturnTypeExpression();
 
-                Schema res = buildSchema(returnTypeExpression, endpointInfo.additionalSchemaComponent, 0);
+                Schema schemaResponse = buildSchema(returnTypeExpression, endpointInfo.additionalSchemaComponent, 0);
                 ResponseItemComponent responseItemComponent = new ResponseItemComponent();
                 responseItemComponent.componentName = getComponentName(endpointInfo.methodName, "Response");
-                responseItemComponent.componentTypeList.add(res);
+                responseItemComponent.componentTypeList.add(schemaResponse);
                 endpointInfo.responseItemComponent = responseItemComponent;
 
                 //On recherche l'annotation @ToRest pour orienter la construction du REST point
@@ -167,58 +167,21 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
 
                 List<Statement> parameters = methodDeclaration.getParameters();
                 parameters.forEach(statement -> {
-                    //TODO checker tous les arguments pour voir s'il faut faire un wrapper
-                    //TODO utiliser buildSchema pour construire de manière recursive les schemas
-                    if (statement instanceof J.VariableDeclarations) {
-                        J.VariableDeclarations variableDeclarations = (J.VariableDeclarations) statement;
-                        TypeTree typeExpression = variableDeclarations.getTypeExpression();
-                        String name = variableDeclarations.getVariables().get(0).getVariableType().getName();
-                        ComponentParam componentParam = new ComponentParam();
-                        componentParam.name = name;
-                        if (typeExpression instanceof J.Identifier || typeExpression instanceof J.Primitive) {
-                            String type = null;
-                            if (typeExpression instanceof J.Primitive) {
-                                type = typeExpression.getType().toString();
-                            } else {
-                                JavaType.FullyQualified fullyQualified = TypeUtils.asFullyQualified(typeExpression.getType());
-                                if (fullyQualified != null) {
-                                    type = fullyQualified.getFullyQualifiedName();
-                                }
-                            }
-                            if (type != null) {
-                                SchemaFormat schemaFormat = getSchemaFormat(type);
-                                componentParam.fullyQualified = type;
-                                if (schemaFormat.schemaType.equals(Schema.SchemaType.OBJECT)) {
-                                    endpointInfo.requestBodyParametersMap.put(name, componentParam);
-                                } else {
-                                    endpointInfo.requestParametersMap.put(name, componentParam);
-                                }
-                            } else {
-                                componentParam.fullyQualified = TypeUtils.asFullyQualified(JavaType.buildType("java.lang.Object")).getFullyQualifiedName();
-                                endpointInfo.requestParametersMap.put(name, componentParam);
-                            }
-                        } else if (typeExpression instanceof J.ParameterizedType) {
-                            List<Expression> typeParameters = ((J.ParameterizedType) typeExpression).getTypeParameters();
-                            if (typeParameters != null && !typeParameters.isEmpty()) {
-                                //List<>
-                                JavaType.FullyQualified fullyQualified = TypeUtils.asFullyQualified((typeParameters.get(0)).getType());
-                                if (fullyQualified != null) {
-                                    String type = fullyQualified.getFullyQualifiedName();
-                                    SchemaFormat schemaFormat = getSchemaFormat(type);
-                                    componentParam.fullyQualified = fullyQualified.getFullyQualifiedName();
-                                    componentParam.componentWrapper = ((J.ParameterizedType) typeExpression).getClazz().toString();
-                                    if (schemaFormat.schemaType.equals(Schema.SchemaType.OBJECT)) {
-                                        endpointInfo.requestBodyParametersMap.put(name, componentParam);
-                                    } else {
-                                        endpointInfo.requestParametersMap.put(name, componentParam);
-                                    }
-                                } else {
-                                    componentParam.fullyQualified = TypeUtils.asFullyQualified(JavaType.buildType("java.lang.Object")).getFullyQualifiedName();
-                                    endpointInfo.requestParametersMap.put(name, componentParam);
-                                }
-                            }
-                        }
-                    } else if (statement instanceof J.Empty) {
+                    J.VariableDeclarations variableDeclarations = (J.VariableDeclarations) statement;
+                    TypeTree typeExpression = variableDeclarations.getTypeExpression();
+                    ComponentParam componentParam = new ComponentParam();
+                    Schema schemaRequest = buildSchema(typeExpression, endpointInfo.additionalSchemaComponent, 0);
+                    String name = variableDeclarations.getVariables().get(0).getVariableType().getName();
+                    componentParam.name = name;
+                    componentParam.schema = schemaRequest;
+                    JavaType.FullyQualified fullyQualified = TypeUtils.asFullyQualified(typeExpression.getType());
+                    if (fullyQualified != null) {
+                        componentParam.fullyQualified = fullyQualified.getFullyQualifiedName();
+                    }
+                    if (componentParam.schema.getRef() != null || isCollection(getClassName(componentParam.fullyQualified))) {
+                        endpointInfo.requestBodyParametersMap.put(name, componentParam);
+                    } else {
+                        endpointInfo.requestParametersMap.put(name, componentParam);
                     }
                 });
                 endpointInfos.add(endpointInfo);
@@ -381,40 +344,30 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     Content content = new ContentImpl();
                     MediaType mediaType = new MediaTypeImpl();
                     Schema schema = new SchemaImpl();
-                    if (endpointInfo.requestBodyParametersMap.size() > 1) {
-                        schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getComponentName(endpointInfo.methodName, "Request"));
-                    } else {
-                        Set<String> params = endpointInfo.requestBodyParametersMap.keySet();
-                        String paramName = params.iterator().next();
-                        ComponentParam componentParam = endpointInfo.requestBodyParametersMap.get(paramName);
-                        if (componentParam.componentWrapper != null && isCollection(componentParam.componentWrapper)) {
-                            schema.setType(Schema.SchemaType.ARRAY);
-                            Schema schemaItem = new SchemaImpl();
-                            schemaItem.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(componentParam.fullyQualified));
-                            schema.setItems(schemaItem);
-                        } else {
-                            schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(componentParam.fullyQualified));
-                        }
-                    }
+                    String requestWrapperName = getComponentName(endpointInfo.methodName, "Request");
+                    schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + requestWrapperName);
                     mediaType.setSchema(schema);
                     content.setMediaTypes(Collections.singletonMap(javax.ws.rs.core.MediaType.APPLICATION_JSON, mediaType));
                     requestBody.setContent(content);
                     operation.setRequestBody(requestBody);
+
+                    //On construit le schema pour le wrapper request
+                    Schema schemaWrapper = new SchemaImpl();
+                    schemaWrapper.setType(Schema.SchemaType.OBJECT);
+                    List<String> descriptionList = new ArrayList<>();
+                    endpointInfo.requestBodyParametersMap.forEach((name, componentParam) -> {
+                        descriptionList.add(getClassName(componentParam.fullyQualified));
+                        schemaWrapper.addProperty(name, componentParam.schema);
+                    });
+                    schemaWrapper.setDescription("Wrapper for " + descriptionList);
+                    endpointInfo.additionalSchemaComponent.put(requestWrapperName, schemaWrapper);
                 } else if (!endpointInfo.requestParametersMap.isEmpty()) {
                     endpointInfo.requestParametersMap.forEach((name, componentParam) -> {
                         Parameter parameter = new ParameterImpl();
                         parameter.setName(name);
                         parameter.setIn(Parameter.In.QUERY);
                         LOG.info("parameters {} with type {}", name, componentParam);
-                        Map<String, Schema> singleParameterSchema = buildSchemaForObject(componentParam);
-                        if (componentParam.componentWrapper != null && isCollection(componentParam.componentWrapper)) {
-                            Schema schema = new SchemaImpl();
-                            schema.setType(Schema.SchemaType.ARRAY);
-                            schema.setItems(singleParameterSchema.values().iterator().next());
-                            parameter.setSchema(schema);
-                        } else {
-                            parameter.setSchema(singleParameterSchema.values().iterator().next());
-                        }
+                        parameter.setSchema(componentParam.schema);
                         operation.addParameter(parameter);
                     });
                 }
@@ -474,68 +427,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                 }
 
                 PathItemComponent pathItemComponent = new PathItemComponent();
-                if (endpointInfo.requestBodyParametersMap.size() > 1) {
-                    Schema schemaWrapper = new SchemaImpl();
-                    schemaWrapper.setType(Schema.SchemaType.OBJECT);
-                    String collect = endpointInfo.requestBodyParametersMap.values().stream().map(componentParam -> getClassName(componentParam.fullyQualified)).collect(Collectors.joining(", "));
-                    schemaWrapper.setDescription("Wrapper for " + collect);
-                    List<Schema> additionnalPathComponents = new ArrayList<>();
-                    endpointInfo.requestBodyParametersMap.values().forEach(componentParam -> {
-                        Map<String, Schema> schemas = buildSchemaForObject(componentParam);
-                        if (componentParam.componentWrapper != null && isCollection(componentParam.componentWrapper)) {
-                            Schema schema = new SchemaImpl();
-                            schema.setType(Schema.SchemaType.ARRAY);
-                            //car si on est dans le cas d'un objet avec des subtypes alors la clé de la map n'est pas le requestParam.name
-                            Schema schemaRequestParam = schemas.get(componentParam.name);
-                            if (schemaRequestParam == null) {
-                                schemaRequestParam = schemas.get(getClassName(componentParam.fullyQualified));
-                            }
-                            if (schemaRequestParam != null && (schemaRequestParam.getType().equals(Schema.SchemaType.OBJECT) || isCollection(componentParam.componentWrapper))) {
-                                Schema schemaRef = new SchemaImpl();
-                                schemaRef.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(componentParam.fullyQualified));
-                                schema.setItems(schemaRef);
-                                schemaWrapper.addProperty(componentParam.name, schema);
-                                endpointInfo.additionalSchemaComponent.put(getClassName(componentParam.fullyQualified), schemaRequestParam);
-                            } else {
-                                schemaWrapper.addProperty(componentParam.name, schema);
-                            }
-                        } else {
-                            schemas.entrySet().forEach(entry -> {
-                                if (entry.getKey().equalsIgnoreCase(componentParam.name)) {
-                                    if (entry.getValue().getType().equals(Schema.SchemaType.OBJECT)) {
-                                        Schema schemaRef = new SchemaImpl();
-                                        schemaRef.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(componentParam.fullyQualified));
-                                        schemaWrapper.addProperty(componentParam.name, schemaRef);
-                                        endpointInfo.additionalSchemaComponent.put(getClassName(componentParam.fullyQualified), entry.getValue());
-                                    } else {
-                                        schemaWrapper.addProperty(componentParam.name, entry.getValue());
-                                    }
-                                } else {
-                                    endpointInfo.additionalSchemaComponent.put(entry.getKey(), entry.getValue());
-                                }
-                            });
-                        }
-                    });
-                    pathItemComponent.pathItem = pathItem;
-                    additionnalPathComponents.add(schemaWrapper);
-                    pathItemComponent.schemaComponent = additionnalPathComponents;
-                    pathItemComponent.componentName = getComponentName(endpointInfo.methodName, "Request");
-                } else if (endpointInfo.requestBodyParametersMap.size() == 1) {
-                    ComponentParam componentParam = endpointInfo.requestBodyParametersMap.values().iterator().next();
-                    pathItemComponent.pathItem = pathItem;
-                    Map<String, Schema> schemas = buildSchemaForObject(componentParam);
-                    schemas.entrySet().forEach(entry -> {
-                        Schema schema = entry.getValue();
-                        if (entry.getKey().equalsIgnoreCase(componentParam.name)) {
-                            pathItemComponent.schemaComponent = Collections.singletonList(schema);
-                        } else {
-                            endpointInfo.additionalSchemaComponent.put(entry.getKey(), schema);
-                        }
-                    });
-                    pathItemComponent.componentName = getClassName(componentParam.fullyQualified);
-                } else {
-                    pathItemComponent.pathItem = pathItem;
-                }
+                pathItemComponent.pathItem = pathItem;
                 endpointInfo.pathItemComponent = pathItemComponent;
             }
 
@@ -816,19 +708,16 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
     static class ComponentParam {
         String fullyQualified;
 
-        String name;
+        Schema schema;
 
-        String componentWrapper;
-    }
+        String name;
+   }
 
     static class ResponseItemComponent {
 
         String fullyQualified;
 
         String componentName;
-
-        @Deprecated
-        Schema.SchemaType componentType;
 
         List<Schema> componentTypeList = new ArrayList<>();
 
