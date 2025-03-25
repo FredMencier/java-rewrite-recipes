@@ -148,6 +148,83 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
         assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithRequestbodyAndListOfStringResponse);
     }
 
+    @Test
+    public void shouldProduceAPIWithRequestBodyListAndListOfStringResponse() throws IOException {
+        rewriteRun(classCat,
+                java("""
+                        package org.refactor.eap6.svc.ejb;
+
+                        import java.util.Date;
+                        import javax.ejb.Remote;
+                        import java.util.List;
+                        import org.refactor.eap6.java.dto.*;
+
+                        @Remote
+                        public interface IAnimalService {
+
+                            List<String> getAnimals(List<Cat> cats);
+                        }
+                        """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
+        );
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithRequestbodyListAndListOfStringResponse);
+    }
+
+    private String expectedContractWithRequestbodyListAndListOfStringResponse = """
+
+            components:\s
+              schemas:
+                Cat:\s
+                  description: org.refactor.eap6.java.dto.Cat
+                  properties:
+                    pattes:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+                GetAnimalsRequest:\s
+                  description: Wrapper for [List]
+                  properties:
+                    cats:\s
+                      items:\s
+                        $ref: '#/components/schemas/Cat'
+                      type: array
+                  type: object
+                GetAnimalsResponse:\s
+                  items:\s
+                    type: string
+                  type: array
+            info:\s
+              description: IAnimalService OpenAPI definition
+              title: IAnimalService
+              version: 1.0.0
+            openapi: 3.0.3
+            paths:
+              /IAnimalService/getAnimals:\s
+                post:\s
+                  description: get-animals
+                  operationId: get-animals
+                  requestBody:\s
+                    content:
+                      application/json:\s
+                        schema:\s
+                          $ref: '#/components/schemas/GetAnimalsRequest'
+                    required: true
+                  responses:
+                    '200':\s
+                      content:
+                        application/json:\s
+                          schema:\s
+                            $ref: '#/components/schemas/GetAnimalsResponse'
+                      description: OK
+                  summary: get-animals
+                  tags:
+                  - IAnimalService
+            tags:
+            -\s
+              name: IAnimalService
+            """;
+
     private String expectedContractWithQueryParametersGETAndStringResponse = """
 
         components:\s
@@ -204,6 +281,12 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
                     name:\s
                       type: string
                   type: object
+                GetAnimalsRequest:\s
+                  description: Wrapper for [Cat]
+                  properties:
+                    cat:\s
+                      $ref: '#/components/schemas/Cat'
+                  type: object
                 GetAnimalsResponse:\s
                   items:\s
                     type: string
@@ -222,7 +305,7 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
                     content:
                       application/json:\s
                         schema:\s
-                          $ref: '#/components/schemas/Cat'
+                          $ref: '#/components/schemas/GetAnimalsRequest'
                     required: true
                   responses:
                     '200':\s
