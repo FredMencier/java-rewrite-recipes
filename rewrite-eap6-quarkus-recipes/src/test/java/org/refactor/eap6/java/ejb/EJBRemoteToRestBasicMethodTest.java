@@ -20,19 +20,19 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
             package org.refactor.eap6.java.dto;
             public class Animal {
             }
-              """);
+            """);
 
     SourceSpecs classDog = java("""
             package org.refactor.eap6.java.dto;
             public class Dog extends Animal {
             }
-              """);
+            """);
 
     SourceSpecs classBird = java("""
             package org.refactor.eap6.java.dto;
             public class Bird extends Animal {
             }
-              """);
+            """);
 
     SourceSpecs classCat = java("""
             package org.refactor.eap6.java.dto;

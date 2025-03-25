@@ -178,7 +178,8 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     if (fullyQualified != null) {
                         componentParam.fullyQualified = fullyQualified.getFullyQualifiedName();
                     }
-                    if (componentParam.schema.getRef() != null || isCollection(getClassName(componentParam.fullyQualified))) {
+                    Optional<String> className = getClassName(componentParam.fullyQualified);
+                    if (componentParam.schema.getRef() != null || (className.isPresent() && isCollection(className.get()))) {
                         endpointInfo.requestBodyParametersMap.put(name, componentParam);
                     } else {
                         endpointInfo.requestParametersMap.put(name, componentParam);
@@ -245,9 +246,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                         Schema schemaObject = schemaMap.get(key);
                         if (schemaObject.getType().equals(Schema.SchemaType.OBJECT)) {
                             schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
-                            schemaMap.entrySet().forEach(entry -> {
-                                additionalSchemaComponent.put(key, entry.getValue());
-                            });
+                            schemaMap.forEach((key1, value) -> additionalSchemaComponent.put(key, value));
                         } else {
                             schema.setType(schemaObject.getType());
                             if (schemaObject.getFormat() != null) {
@@ -256,9 +255,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                         }
                     } else {
                         schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
-                        schemaMap.entrySet().forEach(entry -> {
-                            additionalSchemaComponent.put(key, entry.getValue());
-                        });
+                        schemaMap.forEach((key1, value) -> additionalSchemaComponent.put(key, value));
                     }
                 }
                 return schema;
@@ -302,7 +299,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                         endpointInfo.pathItemComponent.schemaComponent.forEach(schema -> components.addSchema(endpointInfo.pathItemComponent.componentName, schema));
                     }
                     if (!endpointInfo.additionalSchemaComponent.isEmpty()) {
-                        endpointInfo.additionalSchemaComponent.entrySet().forEach(entry -> components.addSchema(entry.getKey(), entry.getValue()));
+                        endpointInfo.additionalSchemaComponent.forEach(components::addSchema);
                     }
                     if (endpointInfo.responseItemComponent != null) {
                         components.addSchema(endpointInfo.responseItemComponent.componentName, endpointInfo.responseItemComponent.componentTypeList.get(0));
@@ -356,7 +353,8 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     schemaWrapper.setType(Schema.SchemaType.OBJECT);
                     List<String> descriptionList = new ArrayList<>();
                     endpointInfo.requestBodyParametersMap.forEach((name, componentParam) -> {
-                        descriptionList.add(getClassName(componentParam.fullyQualified));
+                        Optional<String> className = getClassName(componentParam.fullyQualified);
+                        className.ifPresent(descriptionList::add);
                         schemaWrapper.addProperty(name, componentParam.schema);
                     });
                     schemaWrapper.setDescription("Wrapper for " + descriptionList);
@@ -460,20 +458,21 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     Map<String, io.swagger.v3.oas.models.media.Schema> schemas = ModelConverters.getInstance().readAll(aClass);
                     Map<String, Schema> schemaResultMap = new TreeMap<>();
                     if (schemas != null && !schemas.isEmpty()) {
-                        schemas.entrySet().forEach(entry -> {
-                            Schema schema = SchemaConverter.convert(entry.getValue());
+                        schemas.forEach((key, value) -> {
+                            Schema schema = SchemaConverter.convert(value);
                             schema.setDescription(componentParam.fullyQualified);
-                            if (entry.getKey().equalsIgnoreCase(getClassName(componentParam.fullyQualified))) {
+                            Optional<String> className = getClassName(componentParam.fullyQualified);
+                            if (className.isPresent() && key.equalsIgnoreCase(className.get())) {
                                 schemaResultMap.put(componentParam.name, schema);
                             } else {
-                                schemaResultMap.put(entry.getKey(), schema);
+                                schemaResultMap.put(key, schema);
                             }
                         });
                         return schemaResultMap;
                     } else if (aClass.getEnumConstants() != null && aClass.getEnumConstants().length > 0) {
                         Schema schema = new SchemaImpl();
                         schema.setType(Schema.SchemaType.STRING);
-                        schema.setEnumeration(Arrays.asList(aClass.getEnumConstants()).stream().map(Object::toString).collect(Collectors.toList()));
+                        schema.setEnumeration(Arrays.stream(aClass.getEnumConstants()).map(Object::toString).collect(Collectors.toList()));
                         return Collections.singletonMap(componentParam.name, schema);
                     } else {
                         SchemaFormat schemaFormat = getSchemaFormat(componentParam.fullyQualified);
@@ -503,12 +502,15 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
              * @param fullyQualifiedName
              * @return
              */
-            private String getClassName(String fullyQualifiedName) {
+            private Optional<String> getClassName(String fullyQualifiedName) {
+                if (fullyQualifiedName == null) {
+                    return Optional.empty();
+                }
                 JavaType.FullyQualified fullyQualified = TypeUtils.asFullyQualified(JavaType.buildType(fullyQualifiedName));
                 if (fullyQualified != null) {
-                    return fullyQualified.getClassName();
+                    return Optional.of(fullyQualified.getClassName());
                 } else {
-                    return fullyQualifiedName;
+                    return Optional.of(fullyQualifiedName);
                 }
             }
 
@@ -657,7 +659,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
         }
     }
 
-    class AppInfo {
+    static class AppInfo {
         String appName;
 
         String appDescription;
