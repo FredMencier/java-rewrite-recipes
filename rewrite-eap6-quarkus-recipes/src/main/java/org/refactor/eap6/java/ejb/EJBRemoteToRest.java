@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.smallrye.openapi.api.models.*;
 import io.smallrye.openapi.api.models.info.InfoImpl;
 import io.smallrye.openapi.api.models.media.ContentImpl;
+import io.smallrye.openapi.api.models.media.DiscriminatorImpl;
 import io.smallrye.openapi.api.models.media.MediaTypeImpl;
 import io.smallrye.openapi.api.models.media.SchemaImpl;
 import io.smallrye.openapi.api.models.parameters.ParameterImpl;
@@ -35,6 +36,8 @@ import org.openrewrite.java.tree.*;
 import org.refactor.eap6.java.annotation.ToRest;
 import org.refactor.eap6.util.RewriteUtils;
 import org.refactor.eap6.yaml.util.SchemaConverter;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +107,14 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
         return new JavaIsoVisitor<ExecutionContext>() {
 
             private final List<EndpointInfo> endpointInfos = new ArrayList<>();
+
+            private J.CompilationUnit compilationUnit;
+
+            @Override
+            public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext executionContext) {
+                compilationUnit = cu;
+                return super.visitCompilationUnit(cu, executionContext);
+            }
 
             @Override
             public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext executionContext) {
@@ -245,8 +256,27 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     if (schemaMap.size() == 1) {
                         Schema schemaObject = schemaMap.get(key);
                         if (schemaObject.getType().equals(Schema.SchemaType.OBJECT)) {
-                            schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
-                            schemaMap.forEach((key1, value) -> additionalSchemaComponent.put(key, value));
+                            String fullyQualifiedObjectname = schemaObject.getDescription();
+                            InheritanceInfo inheritanceInfo = getSubtypes(fullyQualifiedObjectname);
+                            if (inheritanceInfo.subtypes.isEmpty()) {
+                                schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
+                                schemaMap.forEach((key1, value) -> additionalSchemaComponent.put(key, value));
+                            } else {
+                                if (!inheritanceInfo.isInterface) {
+                                    //extends
+                                    inheritanceInfo.subtypes.forEach(subtype -> {
+                                        Schema schemaOneOf = new SchemaImpl();
+                                        schemaOneOf.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(subtype.getName()).get());
+                                        schema.addAllOf(schemaOneOf);
+                                        addSubtypeToAdditionnalSchemaConmponent(subtype.getName(), additionalSchemaComponent);
+                                    });
+                                    DiscriminatorImpl discriminator = new DiscriminatorImpl();
+                                    discriminator.propertyName("type_" + key.toLowerCase());
+                                    schema.setDiscriminator(discriminator);
+                                } else {
+                                    //implements
+                                }
+                            }
                         } else {
                             schema.setType(schemaObject.getType());
                             if (schemaObject.getFormat() != null) {
@@ -259,6 +289,37 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     }
                 }
                 return schema;
+            }
+
+            private void addSubtypeToAdditionnalSchemaConmponent(String fullyQualifiedObjectname, Map<String, Schema> additionalSchemaComponent) {
+                Optional<J.ClassDeclaration> classDeclaration = compilationUnit.getClasses().stream().filter(cl -> cl.getType().getFullyQualifiedName().equals(fullyQualifiedObjectname)).findFirst();
+                if (classDeclaration.isPresent()) {
+                    J.ClassDeclaration classDecl = classDeclaration.get();
+                    classDecl.
+                    TypeTree type = classDecl.getType();
+                }
+            }
+
+            /**
+             *
+             * @param fullyQualifiedObjectname
+             * @return
+             */
+            private InheritanceInfo getSubtypes(String fullyQualifiedObjectname) {
+                InheritanceInfo inheritanceInfo = new InheritanceInfo();
+                if (fullyQualifiedObjectname != null) {
+                    try {
+                        Class<?> aClass = getClass().getClassLoader().loadClass(fullyQualifiedObjectname);
+                        inheritanceInfo.isInterface = aClass.isInterface();
+                        String pack = aClass.getPackage().getName();
+                        //TODO ici il faudrait faire une boucle pour rechercher egalement dans les sous packages
+                        Reflections reflections = new Reflections(pack, new SubTypesScanner(false));
+                        inheritanceInfo.subtypes = reflections.getSubTypesOf((Class<Object>) aClass);
+                    } catch (ClassNotFoundException e) {
+                        LOG.error("Cannot load class {}", fullyQualifiedObjectname);
+                    }
+                }
+                return inheritanceInfo;
             }
 
             /**
@@ -648,10 +709,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
         public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext executionContext) {
             J.ClassDeclaration classDeclaration = super.visitClassDeclaration(classDecl, executionContext);
             Object message = executionContext.getMessage(classDeclaration.getSimpleName());
-            if (message instanceof String) {
-                LOG.info("Create component for class " + classDeclaration.getType().getFullyQualifiedName());
-
-            } else if (message instanceof OpenAPI) {
+            if (message instanceof OpenAPI) {
                 LOG.info("Call openApiVisitor after visit");
                 doAfterVisit(new GenerateOpenApiVisitor(tDirectory));
             }
@@ -742,5 +800,12 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
         Schema.SchemaType schemaType;
 
         String format;
+    }
+
+    static class InheritanceInfo {
+
+        Set<Class<?>> subtypes = new HashSet<>();
+
+        boolean isInterface;
     }
 }

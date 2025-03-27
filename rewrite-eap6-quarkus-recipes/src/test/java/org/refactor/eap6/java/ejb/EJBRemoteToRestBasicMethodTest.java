@@ -68,6 +68,26 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
     }
 
     @Test
+    public void shouldProduceAPIWithQueryParametersAndInheritObjectResponse() throws IOException {
+        rewriteRun(classAnimal, classDog, classBird,
+                java("""
+                        package org.refactor.eap6.svc.ejb;
+
+                        import java.util.Date;
+                        import javax.ejb.Remote;
+                        import org.refactor.eap6.java.dto.*;
+
+                        @Remote
+                        public interface IAnimalService {
+
+                            Animal getAnimals(String name, Date referenceDate);
+                        }
+                        """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
+        );
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo("");
+    }
+
+    @Test
     public void shouldProduceAPIWithQueryParametersGETAndStringResponse() throws IOException {
         rewriteRun(
                 java("""
