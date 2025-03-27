@@ -2,6 +2,7 @@
 package org.refactor.eap6.java.ejb;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sun.source.tree.TypeCastTree;
 import io.smallrye.openapi.api.models.*;
 import io.smallrye.openapi.api.models.info.InfoImpl;
 import io.smallrye.openapi.api.models.media.ContentImpl;
@@ -26,10 +27,7 @@ import org.eclipse.microprofile.openapi.models.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.models.responses.APIResponse;
 import org.eclipse.microprofile.openapi.models.responses.APIResponses;
 import org.eclipse.microprofile.openapi.models.tags.Tag;
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Option;
-import org.openrewrite.ScanningRecipe;
-import org.openrewrite.TreeVisitor;
+import org.openrewrite.*;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.*;
@@ -90,6 +88,8 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
         return Duration.ofMinutes(10);
     }
 
+    List<J.CompilationUnit> compilationUnits = new ArrayList<>();
+
     public EJBRemoteToRest(@JsonProperty("targetDirectory") String targetDirectory, @JsonProperty("fullyQualifiedClassToProcess") String fullyQualifiedClassToProcess) {
         this.targetDirectory = targetDirectory;
         this.fullyQualifiedClassToProcess = fullyQualifiedClassToProcess;
@@ -108,12 +108,12 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
 
             private final List<EndpointInfo> endpointInfos = new ArrayList<>();
 
-            private J.CompilationUnit compilationUnit;
-
             @Override
-            public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext executionContext) {
-                compilationUnit = cu;
-                return super.visitCompilationUnit(cu, executionContext);
+            public @org.jspecify.annotations.Nullable J visit(@org.jspecify.annotations.Nullable Tree tree, ExecutionContext executionContext) {
+                if (tree instanceof SourceFile && ((SourceFile) tree).getSourcePath().getFileName().toString().contains(".java")) {
+                    compilationUnits.add((J.CompilationUnit) tree);
+                }
+                return super.visit(tree, executionContext);
             }
 
             @Override
@@ -270,9 +270,21 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                                         schema.addAllOf(schemaOneOf);
                                         addSubtypeToAdditionnalSchemaConmponent(subtype.getName(), additionalSchemaComponent);
                                     });
-                                    DiscriminatorImpl discriminator = new DiscriminatorImpl();
-                                    discriminator.propertyName("type_" + key.toLowerCase());
-                                    schema.setDiscriminator(discriminator);
+                                    DiscriminatorImpl discriminatorForPath = new DiscriminatorImpl();
+                                    String discriminatorPropertyName = "type_" + key.toLowerCase();
+                                    discriminatorForPath.propertyName(discriminatorPropertyName);
+                                    schema.setDiscriminator(discriminatorForPath);
+
+                                    List<String> required = new ArrayList<>();
+                                    required.add(discriminatorPropertyName);
+                                    schemaObject.setRequired(required);
+                                    DiscriminatorImpl discriminatorObject = new DiscriminatorImpl();
+                                    discriminatorObject.propertyName(discriminatorPropertyName);
+                                    schemaObject.setDiscriminator(discriminatorObject);
+                                    Map<String, Schema> properties = new HashMap<>(schemaObject.getProperties());
+                                    properties.put(discriminatorPropertyName, new SchemaImpl().type(Schema.SchemaType.STRING));
+                                    schemaObject.setProperties(properties);
+                                    additionalSchemaComponent.put(key, schemaObject);
                                 } else {
                                     //implements
                                 }
@@ -292,12 +304,15 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
             }
 
             private void addSubtypeToAdditionnalSchemaConmponent(String fullyQualifiedObjectname, Map<String, Schema> additionalSchemaComponent) {
-                Optional<J.ClassDeclaration> classDeclaration = compilationUnit.getClasses().stream().filter(cl -> cl.getType().getFullyQualifiedName().equals(fullyQualifiedObjectname)).findFirst();
-                if (classDeclaration.isPresent()) {
-                    J.ClassDeclaration classDecl = classDeclaration.get();
-                    classDecl.
-                    TypeTree type = classDecl.getType();
+                Set<NameTree> typeTrees = new HashSet<>();
+                for (J.CompilationUnit compilationUnit : compilationUnits) {
+                    typeTrees = compilationUnit.findType(fullyQualifiedObjectname);
+                    if (!typeTrees.isEmpty()) {
+                        break;
+                    }
                 }
+                NameTree nameTree = typeTrees.iterator().next();
+                buildSchema((TypeTree) nameTree, additionalSchemaComponent, 0);
             }
 
             /**
@@ -771,7 +786,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
         Schema schema;
 
         String name;
-   }
+    }
 
     static class ResponseItemComponent {
 
