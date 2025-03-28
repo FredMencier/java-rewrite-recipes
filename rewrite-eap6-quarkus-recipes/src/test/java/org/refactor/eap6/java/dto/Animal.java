@@ -3,11 +3,9 @@ package org.refactor.eap6.java.dto;
 public class Animal {
 
     private String name;
-    private String animalType;
 
-    public Animal(String name, String animalType) {
+    public Animal(String name) {
         this.name = name;
-        this.animalType = animalType;
     }
 
     public String getName() {
@@ -16,13 +14,5 @@ public class Animal {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getAnimalType() {
-        return animalType;
-    }
-
-    public void setAnimalType(String animalType) {
-        this.animalType = animalType;
     }
 }

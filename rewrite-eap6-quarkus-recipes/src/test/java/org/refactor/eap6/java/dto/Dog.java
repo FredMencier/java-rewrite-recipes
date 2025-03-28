@@ -4,8 +4,8 @@ public class Dog extends Animal {
 
     private Integer pattes;
 
-    public Dog(String name, String animalType) {
-        super(name, animalType);
+    public Dog(String name) {
+        super(name);
     }
 
     public Integer getPattes() {

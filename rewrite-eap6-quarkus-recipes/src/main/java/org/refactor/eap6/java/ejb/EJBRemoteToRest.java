@@ -262,14 +262,14 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                                 schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
                                 schemaMap.forEach((key1, value) -> additionalSchemaComponent.put(key, value));
                             } else {
+                                inheritanceInfo.subtypes.forEach(subtype -> {
+                                    Schema schemaOneOf = new SchemaImpl();
+                                    schemaOneOf.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(subtype.getName()).get());
+                                    schema.addOneOf(schemaOneOf);
+                                    addSubtypeToAdditionnalSchemaConmponent(subtype.getName(), additionalSchemaComponent);
+                                });
+
                                 if (!inheritanceInfo.isInterface) {
-                                    //extends
-                                    inheritanceInfo.subtypes.forEach(subtype -> {
-                                        Schema schemaOneOf = new SchemaImpl();
-                                        schemaOneOf.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(subtype.getName()).get());
-                                        schema.addAllOf(schemaOneOf);
-                                        addSubtypeToAdditionnalSchemaConmponent(subtype.getName(), additionalSchemaComponent);
-                                    });
                                     DiscriminatorImpl discriminatorForPath = new DiscriminatorImpl();
                                     String discriminatorPropertyName = "type_" + key.toLowerCase();
                                     discriminatorForPath.propertyName(discriminatorPropertyName);
@@ -285,8 +285,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                                     properties.put(discriminatorPropertyName, new SchemaImpl().type(Schema.SchemaType.STRING));
                                     schemaObject.setProperties(properties);
                                     additionalSchemaComponent.put(key, schemaObject);
-                                } else {
-                                    //implements
+                                    //TODO ajouter le AllOf
                                 }
                             }
                         } else {
