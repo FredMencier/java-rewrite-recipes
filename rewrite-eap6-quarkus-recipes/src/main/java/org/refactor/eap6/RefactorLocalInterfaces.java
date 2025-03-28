@@ -56,7 +56,7 @@ public class RefactorLocalInterfaces extends ScanningRecipe<RefactorLocalInterfa
     @Override
     public TreeVisitor<?, ExecutionContext> getScanner(Scanned acc) {
 
-        return new JavaIsoVisitor<>() {
+        return new JavaIsoVisitor<ExecutionContext>() {
 
             @Override
             public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext executionContext) {
