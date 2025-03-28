@@ -55,7 +55,7 @@ public class AddPersistenceUnitToYaml  extends ScanningRecipe<AddPersistenceUnit
     @Override
     public TreeVisitor<?, ExecutionContext> getScanner(Scanned acc) {
 
-        return new XmlIsoVisitor<>() {
+        return new XmlIsoVisitor<ExecutionContext>() {
 
             private final XPathMatcher xPathMatcher = new XPathMatcher("/persistence/persistence-unit");
 
