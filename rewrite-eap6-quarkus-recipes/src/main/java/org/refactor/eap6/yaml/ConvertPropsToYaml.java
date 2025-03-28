@@ -56,7 +56,7 @@ public class ConvertPropsToYaml extends ScanningRecipe<ConvertPropsToYaml.Scanne
     @Override
     public TreeVisitor<?, ExecutionContext> getScanner(Scanned acc) {
 
-        return new TreeVisitor<>() {
+        return new TreeVisitor<Tree, ExecutionContext>() {
 
             @Override
             public @Nullable Tree visit(@Nullable Tree tree, ExecutionContext executionContext) {
