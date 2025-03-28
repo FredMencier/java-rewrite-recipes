@@ -54,7 +54,7 @@ public class PopulateYamlFile extends ScanningRecipe<PopulateYamlFile.Scanned> {
     @Override
     public TreeVisitor<?, ExecutionContext> getScanner(Scanned acc) {
 
-        return new PropertiesVisitor<>() {
+        return new PropertiesVisitor<ExecutionContext>() {
 
             @Override
             public Properties visitFile(Properties.File file, ExecutionContext executionContext) {
