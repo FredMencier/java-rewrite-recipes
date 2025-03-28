@@ -2,7 +2,6 @@
 package org.refactor.eap6.java.ejb;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sun.source.tree.TypeCastTree;
 import io.smallrye.openapi.api.models.*;
 import io.smallrye.openapi.api.models.info.InfoImpl;
 import io.smallrye.openapi.api.models.media.ContentImpl;
@@ -156,7 +155,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                 endpointInfo.operationId = toDashCase(methodDeclaration.getSimpleName());
                 TypeTree returnTypeExpression = methodDeclaration.getReturnTypeExpression();
 
-                Schema schemaResponse = buildSchema(returnTypeExpression, endpointInfo.additionalSchemaComponent, 0);
+                Schema schemaResponse = buildSchema(returnTypeExpression, endpointInfo.additionalSchemaComponent, 0, null);
                 ResponseItemComponent responseItemComponent = new ResponseItemComponent();
                 responseItemComponent.componentName = getComponentName(endpointInfo.methodName, "Response");
                 responseItemComponent.componentTypeList.add(schemaResponse);
@@ -178,10 +177,13 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
 
                 List<Statement> parameters = methodDeclaration.getParameters();
                 parameters.forEach(statement -> {
+                    if (statement instanceof J.Empty) {
+                        return;
+                    }
                     J.VariableDeclarations variableDeclarations = (J.VariableDeclarations) statement;
                     TypeTree typeExpression = variableDeclarations.getTypeExpression();
                     ComponentParam componentParam = new ComponentParam();
-                    Schema schemaRequest = buildSchema(typeExpression, endpointInfo.additionalSchemaComponent, 0);
+                    Schema schemaRequest = buildSchema(typeExpression, endpointInfo.additionalSchemaComponent, 0, null);
                     String name = variableDeclarations.getVariables().get(0).getVariableType().getName();
                     componentParam.name = name;
                     componentParam.schema = schemaRequest;
@@ -205,7 +207,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
              * @param additionalSchemaComponent
              * @return
              */
-            private Schema buildSchema(TypeTree parameterType, Map<String, Schema> additionalSchemaComponent, int depth) {
+            private Schema buildSchema(TypeTree parameterType, Map<String, Schema> additionalSchemaComponent, int depth, InheritanceInfo inheritInfo) {
                 Schema schema = new SchemaImpl();
                 depth++;
                 if (parameterType instanceof J.ParameterizedType) {
@@ -217,25 +219,25 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                             schema.uniqueItems(true);
                         }
                         Expression last = typeParameters.get(0);
-                        schema.setItems(buildSchema((TypeTree) last, additionalSchemaComponent, depth));
+                        schema.setItems(buildSchema((TypeTree) last, additionalSchemaComponent, depth, inheritInfo));
                     } else if (isMap(simpleName)) {
                         Expression first = typeParameters.get(0);
                         Expression last = typeParameters.get(1);
                         String fullyQualifiedType = first.getType().toString();
                         if (fullyQualifiedType.equals(String.class.getName())) {
                             schema.setType(Schema.SchemaType.OBJECT);
-                            schema.setAdditionalPropertiesSchema(buildSchema((TypeTree) last, additionalSchemaComponent, depth));
+                            schema.setAdditionalPropertiesSchema(buildSchema((TypeTree) last, additionalSchemaComponent, depth, inheritInfo));
                         } else {
                             String objectName = "CompositeMapResponse" + depth;
                             schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + objectName);
                             Schema schemaMapComposite = new SchemaImpl();
                             schemaMapComposite.setDescription("wrapper for Map " + typeParameters);
-                            Schema schemaFirst = buildSchema((TypeTree) first, additionalSchemaComponent, depth);
+                            Schema schemaFirst = buildSchema((TypeTree) first, additionalSchemaComponent, depth, inheritInfo);
                             Schema schemaFirstList = new SchemaImpl();
                             schemaFirstList.setType(Schema.SchemaType.ARRAY);
                             schemaFirstList.setItems(schemaFirst);
 
-                            Schema schemaLast = buildSchema((TypeTree) last, additionalSchemaComponent, depth);
+                            Schema schemaLast = buildSchema((TypeTree) last, additionalSchemaComponent, depth, inheritInfo);
                             Schema schemaLastList = new SchemaImpl();
                             schemaLastList.setType(Schema.SchemaType.ARRAY);
                             schemaLastList.setItems(schemaLast);
@@ -260,13 +262,24 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                             InheritanceInfo inheritanceInfo = getSubtypes(fullyQualifiedObjectname);
                             if (inheritanceInfo.subtypes.isEmpty()) {
                                 schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
-                                schemaMap.forEach((key1, value) -> additionalSchemaComponent.put(key, value));
+                                schemaMap.forEach((key1, value) -> {
+                                    if (inheritInfo!= null && !inheritInfo.isInterface) {
+                                        Schema globalSchema = new SchemaImpl();
+                                        Schema ref = new SchemaImpl();
+                                        ref.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(inheritInfo.fullyQualifiedSuperClass).get());
+                                        globalSchema.addAllOf(ref);
+                                        globalSchema.addAllOf(value);
+                                        additionalSchemaComponent.put(key1, globalSchema);
+                                    } else {
+                                        additionalSchemaComponent.put(key1, value);
+                                    }
+                                });
                             } else {
                                 inheritanceInfo.subtypes.forEach(subtype -> {
                                     Schema schemaOneOf = new SchemaImpl();
                                     schemaOneOf.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(subtype.getName()).get());
                                     schema.addOneOf(schemaOneOf);
-                                    addSubtypeToAdditionnalSchemaConmponent(subtype.getName(), additionalSchemaComponent);
+                                    addSubtypeToAdditionnalSchemaConmponent(subtype.getName(), additionalSchemaComponent, inheritanceInfo);
                                 });
 
                                 if (!inheritanceInfo.isInterface) {
@@ -285,7 +298,6 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                                     properties.put(discriminatorPropertyName, new SchemaImpl().type(Schema.SchemaType.STRING));
                                     schemaObject.setProperties(properties);
                                     additionalSchemaComponent.put(key, schemaObject);
-                                    //TODO ajouter le AllOf
                                 }
                             }
                         } else {
@@ -302,7 +314,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                 return schema;
             }
 
-            private void addSubtypeToAdditionnalSchemaConmponent(String fullyQualifiedObjectname, Map<String, Schema> additionalSchemaComponent) {
+            private void addSubtypeToAdditionnalSchemaConmponent(String fullyQualifiedObjectname, Map<String, Schema> additionalSchemaComponent, InheritanceInfo inheritanceInfo) {
                 Set<NameTree> typeTrees = new HashSet<>();
                 for (J.CompilationUnit compilationUnit : compilationUnits) {
                     typeTrees = compilationUnit.findType(fullyQualifiedObjectname);
@@ -311,7 +323,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     }
                 }
                 NameTree nameTree = typeTrees.iterator().next();
-                buildSchema((TypeTree) nameTree, additionalSchemaComponent, 0);
+                buildSchema((TypeTree) nameTree, additionalSchemaComponent, 0, inheritanceInfo);
             }
 
             /**
@@ -325,6 +337,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     try {
                         Class<?> aClass = getClass().getClassLoader().loadClass(fullyQualifiedObjectname);
                         inheritanceInfo.isInterface = aClass.isInterface();
+                        inheritanceInfo.fullyQualifiedSuperClass = fullyQualifiedObjectname;
                         String pack = aClass.getPackage().getName();
                         //TODO ici il faudrait faire une boucle pour rechercher egalement dans les sous packages
                         Reflections reflections = new Reflections(pack, new SubTypesScanner(false));
@@ -819,6 +832,8 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
     static class InheritanceInfo {
 
         Set<Class<?>> subtypes = new HashSet<>();
+
+        String fullyQualifiedSuperClass;
 
         boolean isInterface;
     }
