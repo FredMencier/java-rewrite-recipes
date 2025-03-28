@@ -29,6 +29,18 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
             }
             """);
 
+    SourceSpecs classDog = java("""
+            package org.refactor.eap6.java.dto;
+            public class Dog {
+            }
+            """);
+
+    SourceSpecs classAnimalComposite = java("""
+            package org.refactor.eap6.java.dto;
+            public class AnimalComposite {
+            }
+            """);
+
     SourceSpecs classAnimal = java("""
             package org.refactor.eap6.java.dto;
             public class Animal {
@@ -167,6 +179,27 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
         );
         assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithMultiListAndMapResponse);
+    }
+
+    @Test
+    public void shouldProduceAPIWithRequestBodyAndMapCompositeResponse() throws IOException {
+        rewriteRun(classCountry, classAnimalComposite, classDog,
+                java("""
+                        package org.refactor.eap6.svc.ejb;
+
+                        import java.util.Date;
+                        import javax.ejb.Remote;
+                        import java.util.List;
+                        import org.refactor.eap6.java.dto.*;
+
+                        @Remote
+                        public interface IAnimalService {
+
+                            AnimalComposite getAnimals(Country country);
+                        }
+                        """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
+        );
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo("");
     }
 
     private String expectedContractWithWrapperRequestBodyAndWrapperResponse = """
