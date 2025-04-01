@@ -157,7 +157,6 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
 
                 Schema schemaResponse = buildSchema(returnTypeExpression, endpointInfo.additionalSchemaComponent, 0, null);
                 ResponseItemComponent responseItemComponent = new ResponseItemComponent();
-                responseItemComponent.componentName = getComponentName(endpointInfo.methodName, "Response");
                 responseItemComponent.componentTypeList.add(schemaResponse);
                 endpointInfo.responseItemComponent = responseItemComponent;
 
@@ -389,7 +388,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     if (!endpointInfo.additionalSchemaComponent.isEmpty()) {
                         endpointInfo.additionalSchemaComponent.forEach(components::addSchema);
                     }
-                    if (endpointInfo.responseItemComponent != null) {
+                    if (endpointInfo.responseItemComponent != null && !endpointInfo.responseItemComponent.componentTypeList.isEmpty()) {
                         components.addSchema(endpointInfo.responseItemComponent.componentName, endpointInfo.responseItemComponent.componentTypeList.get(0));
                     }
 
@@ -465,37 +464,42 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     apiResponses.addAPIResponse("default", apiResponse);
                     operation.setResponses(apiResponses);
                 } else {
-                    SchemaFormat schemaFormat = getSchemaFormat(endpointInfo.responseItemComponent.fullyQualified != null ? endpointInfo.responseItemComponent.fullyQualified : endpointInfo.responseItemComponent.componentName);
                     apiResponse.setDescription("OK");
                     Content content = new ContentImpl();
                     MediaType mediaType = new MediaTypeImpl();
-                    Schema schema = new SchemaImpl();
-                    if (!schemaFormat.schemaType.equals(Schema.SchemaType.OBJECT)) {
-                        if (endpointInfo.responseItemComponent.responseWrapper != null && isCollection(endpointInfo.responseItemComponent.responseWrapper)) {
-                            schema.setType(Schema.SchemaType.ARRAY);
-                            Schema schemaItem = new SchemaImpl();
-                            schemaItem.setType(schemaFormat.schemaType);
-                            schema.setItems(schemaItem);
-                            if (isUniqueCollection(endpointInfo.responseItemComponent.responseWrapper)) {
-                                schema.uniqueItems(true);
+                    if (endpointInfo.responseItemComponent.fullyQualified != null || endpointInfo.responseItemComponent.componentName != null) {
+                        SchemaFormat schemaFormat = getSchemaFormat(endpointInfo.responseItemComponent.fullyQualified != null ? endpointInfo.responseItemComponent.fullyQualified : endpointInfo.responseItemComponent.componentName);
+                        Schema schema = new SchemaImpl();
+                        if (!schemaFormat.schemaType.equals(Schema.SchemaType.OBJECT)) {
+                            if (endpointInfo.responseItemComponent.responseWrapper != null && isCollection(endpointInfo.responseItemComponent.responseWrapper)) {
+                                schema.setType(Schema.SchemaType.ARRAY);
+                                Schema schemaItem = new SchemaImpl();
+                                schemaItem.setType(schemaFormat.schemaType);
+                                schema.setItems(schemaItem);
+                                if (isUniqueCollection(endpointInfo.responseItemComponent.responseWrapper)) {
+                                    schema.uniqueItems(true);
+                                }
+                            } else {
+                                schema.setType(schemaFormat.schemaType);
                             }
                         } else {
-                            schema.setType(schemaFormat.schemaType);
-                        }
-                    } else {
-                        if (endpointInfo.responseItemComponent.responseWrapper != null && isCollection(endpointInfo.responseItemComponent.responseWrapper)) {
-                            schema.setType(Schema.SchemaType.ARRAY);
-                            Schema schemaItem = new SchemaImpl();
-                            schemaItem.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + endpointInfo.responseItemComponent.componentName);
-                            schema.setItems(schemaItem);
-                            if (isUniqueCollection(endpointInfo.responseItemComponent.responseWrapper)) {
-                                schema.uniqueItems(true);
+                            if (endpointInfo.responseItemComponent.responseWrapper != null && isCollection(endpointInfo.responseItemComponent.responseWrapper)) {
+                                schema.setType(Schema.SchemaType.ARRAY);
+                                Schema schemaItem = new SchemaImpl();
+                                schemaItem.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + endpointInfo.responseItemComponent.componentName);
+                                schema.setItems(schemaItem);
+                                if (isUniqueCollection(endpointInfo.responseItemComponent.responseWrapper)) {
+                                    schema.uniqueItems(true);
+                                }
+                            } else {
+                                schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + endpointInfo.responseItemComponent.componentName);
                             }
-                        } else {
-                            schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + endpointInfo.responseItemComponent.componentName);
                         }
+                        mediaType.setSchema(schema);
+                    } else if (!endpointInfo.responseItemComponent.componentTypeList.isEmpty()) {
+                        mediaType.setSchema(endpointInfo.responseItemComponent.componentTypeList.get(0));
+                        endpointInfo.responseItemComponent.componentTypeList.clear();
                     }
-                    mediaType.setSchema(schema);
                     content.setMediaTypes(Collections.singletonMap(javax.ws.rs.core.MediaType.APPLICATION_JSON, mediaType));
                     apiResponse.setContent(content);
                     apiResponses.addAPIResponse(String.valueOf(HttpStatus.SC_OK), apiResponse);
