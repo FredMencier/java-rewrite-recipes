@@ -274,18 +274,14 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                                     }
                                 });
                             } else {
-                                inheritanceInfo.subtypes.forEach(subtype -> {
-                                    Schema schemaOneOf = new SchemaImpl();
-                                    schemaOneOf.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(subtype.getName()).get());
-                                    schema.addOneOf(schemaOneOf);
-                                    addSubtypeToAdditionnalSchemaConmponent(subtype.getName(), additionalSchemaComponent, inheritanceInfo);
-                                });
-
                                 if (!inheritanceInfo.isInterface) {
                                     DiscriminatorImpl discriminatorForPath = new DiscriminatorImpl();
                                     String discriminatorPropertyName = "type_" + key.toLowerCase();
                                     discriminatorForPath.propertyName(discriminatorPropertyName);
-                                    schema.setDiscriminator(discriminatorForPath);
+                                    inheritanceInfo.subtypes.forEach(subtype -> {
+                                        addSubtypeToAdditionnalSchemaConmponent(subtype.getName(), additionalSchemaComponent, inheritanceInfo);
+                                    });
+                                    schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
 
                                     List<String> required = new ArrayList<>();
                                     required.add(discriminatorPropertyName);
@@ -297,6 +293,16 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                                     properties.put(discriminatorPropertyName, new SchemaImpl().type(Schema.SchemaType.STRING));
                                     schemaObject.setProperties(properties);
                                     additionalSchemaComponent.put(key, schemaObject);
+                                } else {
+                                    Schema schemaOneOf = new SchemaImpl();
+                                    inheritanceInfo.subtypes.forEach(subtype -> {
+                                        Schema schemaRef = new SchemaImpl();
+                                        schemaRef.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(subtype.getName()).get());
+                                        schemaOneOf.addOneOf(schemaRef);
+                                        addSubtypeToAdditionnalSchemaConmponent(subtype.getName(), additionalSchemaComponent, inheritanceInfo);
+                                    });
+                                    additionalSchemaComponent.put(key, schemaOneOf);
+                                    schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
                                 }
                             }
                         } else {
