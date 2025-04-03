@@ -122,7 +122,7 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
         );
-        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo("");
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithQueryParametersAndInheritedObjectResponse);
     }
 
     @Test
@@ -247,6 +247,85 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
         assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithRequestbodyListAndListOfStringResponse);
     }
 
+    private String expectedContractWithQueryParametersAndInheritedObjectResponse = """
+
+        components:\s
+          schemas:
+            Animal:\s
+              description: org.refactor.eap6.java.dto.Animal
+              discriminator:\s
+                propertyName: type_animal
+              properties:
+                name:\s
+                  type: string
+                type_animal:\s
+                  type: string
+              required:
+              - type_animal
+              type: object
+            Bird:\s
+              allOf:
+              -\s
+                $ref: '#/components/schemas/Animal'
+              -\s
+                description: org.refactor.eap6.java.dto.Bird
+                properties:
+                  name:\s
+                    type: string
+                  ailes:\s
+                    format: int32
+                    type: integer
+                type: object
+            Dog:\s
+              allOf:
+              -\s
+                $ref: '#/components/schemas/Animal'
+              -\s
+                description: org.refactor.eap6.java.dto.Dog
+                properties:
+                  pattes:\s
+                    format: int32
+                    type: integer
+                  name:\s
+                    type: string
+                type: object
+        info:\s
+          description: IAnimalService OpenAPI definition
+          title: IAnimalService
+          version: 1.0.0
+        openapi: 3.0.3
+        paths:
+          /IAnimalService/getAnimals:\s
+            post:\s
+              description: get-animals
+              operationId: get-animals
+              parameters:
+              -\s
+                in: query
+                name: name
+                schema:\s
+                  type: string
+              -\s
+                in: query
+                name: referenceDate
+                schema:\s
+                  format: date
+                  type: string
+              responses:
+                '200':\s
+                  content:
+                    application/json:\s
+                      schema:\s
+                        $ref: '#/components/schemas/Animal'
+                  description: OK
+              summary: get-animals
+              tags:
+              - IAnimalService
+        tags:
+        -\s
+          name: IAnimalService
+            """;
+
     private String expectedContractWithEmptyParametersAndStringResponse = """
 
             components:  {}
@@ -279,10 +358,12 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
 
             components:\s
               schemas:
-                Human:
+                Human:\s
                   oneOf:
-                    - $ref: '#/components/schemas/Man'
-                    - $ref: '#/components/schemas/Woman'
+                  -\s
+                    $ref: '#/components/schemas/Man'
+                  -\s
+                    $ref: '#/components/schemas/Woman'
                 Man:\s
                   description: org.refactor.eap6.java.dto.Man
                   properties:
