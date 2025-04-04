@@ -430,14 +430,6 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
                     name:\s
                       type: string
                   type: object
-                GetAnimalsRequest:\s
-                  description: Wrapper for [List]
-                  properties:
-                    cats:\s
-                      items:\s
-                        $ref: '#/components/schemas/Cat'
-                      type: array
-                  type: object
             info:\s
               description: IAnimalService OpenAPI definition
               title: IAnimalService
@@ -452,7 +444,9 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
                     content:
                       application/json:\s
                         schema:\s
-                          $ref: '#/components/schemas/GetAnimalsRequest'
+                          items:\s
+                            $ref: '#/components/schemas/Cat'
+                          type: array
                     required: true
                   responses:
                     '200':\s
@@ -524,12 +518,6 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
                     name:\s
                       type: string
                   type: object
-                GetAnimalsRequest:\s
-                  description: Wrapper for [Cat]
-                  properties:
-                    cat:\s
-                      $ref: '#/components/schemas/Cat'
-                  type: object
             info:\s
               description: IAnimalService OpenAPI definition
               title: IAnimalService
@@ -544,7 +532,7 @@ class EJBRemoteToRestBasicMethodTest implements RewriteTest {
                     content:
                       application/json:\s
                         schema:\s
-                          $ref: '#/components/schemas/GetAnimalsRequest'
+                          $ref: '#/components/schemas/Cat'
                     required: true
                   responses:
                     '200':\s

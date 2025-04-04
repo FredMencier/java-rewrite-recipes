@@ -270,7 +270,7 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                             if (inheritanceInfo.subtypes.isEmpty()) {
                                 schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + key);
                                 schemaMap.forEach((key1, value) -> {
-                                    if (inheritInfo!= null && !inheritInfo.isInterface) {
+                                    if (inheritInfo != null && !inheritInfo.isInterface) {
                                         Schema globalSchema = new SchemaImpl();
                                         Schema ref = new SchemaImpl();
                                         ref.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + getClassName(inheritInfo.fullyQualifiedSuperClass).get());
@@ -441,25 +441,31 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                     requestBody.setRequired(true);
                     Content content = new ContentImpl();
                     MediaType mediaType = new MediaTypeImpl();
-                    Schema schema = new SchemaImpl();
-                    String requestWrapperName = getComponentName(endpointInfo.methodName, "Request");
-                    schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + requestWrapperName);
-                    mediaType.setSchema(schema);
+                    if (endpointInfo.requestBodyParametersMap.size() == 1) {
+                        endpointInfo.requestBodyParametersMap.forEach((name, componentParam) -> {
+                            mediaType.setSchema(componentParam.schema);
+                        });
+                    } else {
+                        Schema schema = new SchemaImpl();
+                        String requestWrapperName = getComponentName(endpointInfo.methodName, "Request");
+                        schema.setRef(ROOT_PATH_COMPONENTS_SCHEMAS + requestWrapperName);
+
+                        //On construit le schema pour le wrapper request
+                        Schema schemaWrapper = new SchemaImpl();
+                        schemaWrapper.setType(Schema.SchemaType.OBJECT);
+                        List<String> descriptionList = new ArrayList<>();
+                        endpointInfo.requestBodyParametersMap.forEach((name, componentParam) -> {
+                            Optional<String> className = getClassName(componentParam.fullyQualified);
+                            className.ifPresent(descriptionList::add);
+                            schemaWrapper.addProperty(name, componentParam.schema);
+                        });
+                        schemaWrapper.setDescription("Wrapper for " + descriptionList);
+                        endpointInfo.additionalSchemaComponent.put(requestWrapperName, schemaWrapper);
+                        mediaType.setSchema(schema);
+                    }
                     content.setMediaTypes(Collections.singletonMap(javax.ws.rs.core.MediaType.APPLICATION_JSON, mediaType));
                     requestBody.setContent(content);
                     operation.setRequestBody(requestBody);
-
-                    //On construit le schema pour le wrapper request
-                    Schema schemaWrapper = new SchemaImpl();
-                    schemaWrapper.setType(Schema.SchemaType.OBJECT);
-                    List<String> descriptionList = new ArrayList<>();
-                    endpointInfo.requestBodyParametersMap.forEach((name, componentParam) -> {
-                        Optional<String> className = getClassName(componentParam.fullyQualified);
-                        className.ifPresent(descriptionList::add);
-                        schemaWrapper.addProperty(name, componentParam.schema);
-                    });
-                    schemaWrapper.setDescription("Wrapper for " + descriptionList);
-                    endpointInfo.additionalSchemaComponent.put(requestWrapperName, schemaWrapper);
                 } else if (!endpointInfo.requestParametersMap.isEmpty()) {
                     endpointInfo.requestParametersMap.forEach((name, componentParam) -> {
                         Parameter parameter = new ParameterImpl();

@@ -205,7 +205,7 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
     }
 
     @Test
-    public void shouldProduceAPIWithRequestBodyAndMapCompositeResponse() throws IOException {
+    public void shouldProduceAPIWithRequestBodyAndObjectResponse() throws IOException {
         rewriteRun(classCountry, classAnimalComposite, classDog,
                 java("""
                         package org.refactor.eap6.svc.ejb;
@@ -222,8 +222,61 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
                         }
                         """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
         );
-        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo("");
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedWithRequestBodyAndObjectResponse);
     }
+
+    private String expectedWithRequestBodyAndObjectResponse = """
+
+            components:\s
+              schemas:
+                AnimalComposite:\s
+                  description: org.refactor.eap6.java.dto.AnimalComposite
+                  properties:
+                    pattes:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+                Country:\s
+                  description: org.refactor.eap6.java.dto.Country
+                  properties:
+                    avarageTemperature:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+            info:\s
+              description: IAnimalService OpenAPI definition
+              title: IAnimalService
+              version: 1.0.0
+            openapi: 3.0.3
+            paths:
+              /IAnimalService/getAnimals:\s
+                post:\s
+                  description: get-animals
+                  operationId: get-animals
+                  requestBody:\s
+                    content:
+                      application/json:\s
+                        schema:\s
+                          $ref: '#/components/schemas/Country'
+                    required: true
+                  responses:
+                    '200':\s
+                      content:
+                        application/json:\s
+                          schema:\s
+                            $ref: '#/components/schemas/AnimalComposite'
+                      description: OK
+                  summary: get-animals
+                  tags:
+                  - IAnimalService
+            tags:
+            -\s
+              name: IAnimalService
+            """;
 
     private String expectedContractWithTwoMethods = """
 
@@ -247,12 +300,6 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
                     name:\s
                       type: string
                   type: object
-                GetAnimalsRequest:\s
-                  description: Wrapper for [Country]
-                  properties:
-                    country:\s
-                      $ref: '#/components/schemas/Country'
-                  type: object
                 GetAnimals1Request:\s
                   description: Wrapper for [Country, String]
                   properties:
@@ -275,7 +322,7 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
                     content:
                       application/json:\s
                         schema:\s
-                          $ref: '#/components/schemas/GetAnimalsRequest'
+                          $ref: '#/components/schemas/Country'
                     required: true
                   responses:
                     '200':\s
