@@ -197,6 +197,14 @@ public class EJBRemoteToRest extends ScanningRecipe<String> {
                         endpointInfo.requestParametersMap.put(name, componentParam);
                     }
                 });
+                //On ne peut pas avoir deux fois le meme path
+                List<EndpointInfo> methodNameAlreadyExistList = endpointInfos.stream().filter(endpointInf -> endpointInf.methodName.equalsIgnoreCase(endpointInfo.methodName)).collect(Collectors.toList());
+                if (!methodNameAlreadyExistList.isEmpty()) {
+                    endpointInfo.methodName = endpointInfo.methodName + methodNameAlreadyExistList.size();
+                    endpointInfo.operationId = endpointInfo.operationId + methodNameAlreadyExistList.size();
+                    endpointInfo.path = endpointInfo.path + methodNameAlreadyExistList.size();
+                    endpointInfo.description = endpointInfo.description + methodNameAlreadyExistList.size();
+                }
                 endpointInfos.add(endpointInfo);
             }
 
