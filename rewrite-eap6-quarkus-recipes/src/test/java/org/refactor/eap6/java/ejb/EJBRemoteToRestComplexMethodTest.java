@@ -121,6 +121,27 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
     }
 
     @Test
+    public void shouldProduceAPIWitRequestBodyAndWrapperResponse() throws IOException {
+        rewriteRun(classCat, classCountry,
+                java("""
+                        package org.refactor.eap6.svc.ejb;
+
+                        import java.util.Date;
+                        import javax.ejb.Remote;
+                        import java.util.List;
+                        import org.refactor.eap6.java.dto.*;
+
+                        @Remote
+                        public interface IAnimalService {
+
+                            Map<Country, Cat> getAnimals(Cat cat);
+                        }
+                        """, sourceSpecs -> sourceSpecs.path("target/IAnimalService.yaml"))
+        );
+        assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedContractWithRequestBodyAndWrapperResponse);
+    }
+
+    @Test
     public void shouldProduceAPIWithWrapperRequestBodyAndWrapperResponse() throws IOException {
         rewriteRun(classCat, classCountry,
                 java("""
@@ -224,6 +245,70 @@ class EJBRemoteToRestComplexMethodTest implements RewriteTest {
         );
         assertThat(FileUtils.readFileToString(new File("target/IAnimalService.yaml"))).isEqualTo(expectedWithRequestBodyAndObjectResponse);
     }
+
+    private String expectedContractWithRequestBodyAndWrapperResponse = """
+
+            components:\s
+              schemas:
+                Cat:\s
+                  description: org.refactor.eap6.java.dto.Cat
+                  properties:
+                    pattes:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+                CompositeMapResponse1:\s
+                  description: wrapper for Map [Country, Cat]
+                  properties:
+                    first:\s
+                      items:\s
+                        $ref: '#/components/schemas/Country'
+                      type: array
+                    last:\s
+                      items:\s
+                        $ref: '#/components/schemas/Cat'
+                      type: array
+                Country:\s
+                  description: org.refactor.eap6.java.dto.Country
+                  properties:
+                    avarageTemperature:\s
+                      format: int32
+                      type: integer
+                    name:\s
+                      type: string
+                  type: object
+            info:\s
+              description: IAnimalService OpenAPI definition
+              title: IAnimalService
+              version: 1.0.0
+            openapi: 3.0.3
+            paths:
+              /IAnimalService/getAnimals:\s
+                post:\s
+                  description: get-animals
+                  operationId: get-animals
+                  requestBody:\s
+                    content:
+                      application/json:\s
+                        schema:\s
+                          $ref: '#/components/schemas/Cat'
+                    required: true
+                  responses:
+                    '200':\s
+                      content:
+                        application/json:\s
+                          schema:\s
+                            $ref: '#/components/schemas/CompositeMapResponse1'
+                      description: OK
+                  summary: get-animals
+                  tags:
+                  - IAnimalService
+            tags:
+            -\s
+              name: IAnimalService
+            """;
 
     private String expectedWithRequestBodyAndObjectResponse = """
 
